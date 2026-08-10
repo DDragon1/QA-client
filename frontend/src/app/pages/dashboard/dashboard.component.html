@@ -1,0 +1,63 @@
+<h1>{{ labels.dashboard.title }}</h1>
+
+@if (loading) {
+  <div class="center">
+    <mat-spinner diameter="40" />
+    <p>{{ labels.common.loading }}</p>
+  </div>
+} @else if (error) {
+  <p class="error">{{ error }}</p>
+} @else if (!latestVersion) {
+  <mat-card>
+    <mat-card-content>
+      <p>{{ labels.common.noData }}</p>
+      <a mat-raised-button color="primary" routerLink="/versions">{{ labels.versions.newVersion }}</a>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <mat-card class="version-card">
+    <mat-card-header>
+      <mat-card-title>{{ labels.dashboard.latestVersion }}: {{ latestVersion.name }}</mat-card-title>
+      @if (latestVersion.description) {
+        <mat-card-subtitle>{{ latestVersion.description }}</mat-card-subtitle>
+      }
+    </mat-card-header>
+    <mat-card-content>
+      <div class="stats-grid">
+        <div class="stat">
+          <span class="stat-value">{{ latestVersion.stats.total }}</span>
+          <span class="stat-label">{{ labels.dashboard.stats.total }}</span>
+        </div>
+        <div class="stat need-run">
+          <span class="stat-value">{{ latestVersion.stats.needToRun }}</span>
+          <span class="stat-label">{{ labels.dashboard.stats.needToRun }}</span>
+        </div>
+        <div class="stat done">
+          <span class="stat-value">{{ latestVersion.stats.done }}</span>
+          <span class="stat-label">{{ labels.dashboard.stats.done }}</span>
+        </div>
+        <div class="stat rerun">
+          <span class="stat-value">{{ latestVersion.stats.needToRerun }}</span>
+          <span class="stat-label">{{ labels.dashboard.stats.needToRerun }}</span>
+        </div>
+        <div class="stat success">
+          <span class="stat-value">{{ latestVersion.stats.success }}</span>
+          <span class="stat-label">{{ labels.dashboard.stats.success }}</span>
+        </div>
+        <div class="stat failed">
+          <span class="stat-value">{{ latestVersion.stats.failed }}</span>
+          <span class="stat-label">{{ labels.dashboard.stats.failed }}</span>
+        </div>
+        <div class="stat bug">
+          <span class="stat-value">{{ latestVersion.stats.hasBug }}</span>
+          <span class="stat-label">{{ labels.dashboard.stats.hasBug }}</span>
+        </div>
+      </div>
+    </mat-card-content>
+    <mat-card-actions>
+      <a mat-raised-button color="primary" [routerLink]="['/versions', latestVersion.id, 'workspace']">
+        {{ labels.dashboard.openWorkspace }}
+      </a>
+    </mat-card-actions>
+  </mat-card>
+}

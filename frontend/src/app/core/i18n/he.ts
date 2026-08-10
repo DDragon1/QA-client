@@ -1,0 +1,110 @@
+export const LABELS = {
+  appTitle: 'ניהול בדיקות QA',
+  nav: {
+    dashboard: 'לוח בקרה',
+    catalog: 'קטלוג בדיקות',
+    versions: 'גרסאות',
+    reports: 'דוחות',
+  },
+  runStatus: {
+    need_to_run: 'צריך להריץ',
+    done: 'בוצע',
+    need_to_rerun: 'צריך להריץ מחדש',
+  },
+  resultStatus: {
+    success: 'הצליח',
+    failed: 'נכשל',
+    has_bug: 'יש באג',
+  },
+  testType: {
+    manual: 'ידני',
+    automatic: 'אוטומטי',
+  },
+  common: {
+    save: 'שמור',
+    cancel: 'ביטול',
+    add: 'הוסף',
+    edit: 'ערוך',
+    delete: 'מחק',
+    loading: 'טוען...',
+    noData: 'אין נתונים',
+    error: 'אירעה שגיאה',
+    success: 'הפעולה בוצעה בהצלחה',
+    conflict: 'הרשומה עודכנה על ידי משתמש אחר — הנתונים רועננו',
+    all: 'הכל',
+    actions: 'פעולות',
+    notes: 'הערות',
+    feature: 'תכולה',
+    scenario: 'תרחיש',
+    steps: 'שלבים לביצוע',
+    expectedResult: 'תוצר צפוי',
+    type: 'סוג',
+    runStatus: 'סטטוס הרצה',
+    resultStatus: 'תוצאה',
+    active: 'פעיל',
+    inactive: 'לא פעיל',
+  },
+  dashboard: {
+    title: 'לוח בקרה',
+    latestVersion: 'גרסה אחרונה',
+    openWorkspace: 'פתח מרחב עבודה',
+    stats: {
+      total: 'סה"כ בדיקות',
+      needToRun: 'צריך להריץ',
+      done: 'בוצע',
+      needToRerun: 'צריך להריץ מחדש',
+      success: 'הצליח',
+      failed: 'נכשל',
+      hasBug: 'יש באג',
+    },
+  },
+  catalog: {
+    title: 'קטלוג בדיקות',
+    addFeature: 'הוסף תכולה',
+    addTest: 'הוסף בדיקה',
+    importExcel: 'ייבוא מאקסל',
+    importSuccess: 'ייבוא הושלם',
+    showInactive: 'הצג בדיקות לא פעילות',
+  },
+  versions: {
+    title: 'גרסאות',
+    newVersion: 'גרסה חדשה',
+    name: 'שם גרסה',
+    description: 'תיאור',
+    createdAt: 'נוצר ב',
+    open: 'פתח',
+    create: 'צור גרסה',
+  },
+  workspace: {
+    title: 'מרחב עבודה',
+    filters: 'סינון',
+    filterFeature: 'תכולה',
+    filterRunStatus: 'סטטוס הרצה',
+    filterResultStatus: 'תוצאה',
+    filterType: 'סוג בדיקה',
+  },
+  reports: {
+    title: 'דוחות',
+    selectVersion: 'בחר גרסה',
+    downloadExcel: 'הורד Excel',
+    downloadPdf: 'הורד PDF',
+  },
+} as const;
+
+export const RUN_STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'need_to_run', label: LABELS.runStatus.need_to_run },
+  { value: 'done', label: LABELS.runStatus.done },
+  { value: 'need_to_rerun', label: LABELS.runStatus.need_to_rerun },
+];
+
+export const RESULT_STATUS_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: '', label: '-' },
+  { value: 'success', label: LABELS.resultStatus.success },
+  { value: 'failed', label: LABELS.resultStatus.failed },
+  { value: 'has_bug', label: LABELS.resultStatus.has_bug },
+];
+
+export const TEST_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'manual', label: LABELS.testType.manual },
+  { value: 'automatic', label: LABELS.testType.automatic },
+];

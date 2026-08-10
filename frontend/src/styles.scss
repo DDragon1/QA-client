@@ -1,0 +1,77 @@
+@use '@angular/material' as mat;
+
+html:not(.dark-theme) {
+  --surface-muted: #f5f5f5;
+  --surface-subtle: #eeeeee;
+  --border-color: #e0e0e0;
+  --text-muted: #666;
+  --text-subtle: #888;
+  --row-need-run: #fafafa;
+  --row-rerun: #fff8e1;
+  --row-done: #ffffff;
+  --chip-done: #e3f2fd;
+  --chip-success: #e8f5e9;
+  --chip-failed: #ffebee;
+  --chip-bug: #fff3e0;
+  --nav-active: rgba(25, 118, 210, 0.08);
+
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}
+
+html.dark-theme {
+  color-scheme: dark;
+  --surface-muted: #2a2a2a;
+  --surface-subtle: #333333;
+  --border-color: #444444;
+  --text-muted: #b0b0b0;
+  --text-subtle: #999999;
+  --row-need-run: #1e1e1e;
+  --row-rerun: #2d2617;
+  --row-done: #121212;
+  --chip-done: #1a2a3a;
+  --chip-success: #1a2e1a;
+  --chip-failed: #3a1a1a;
+  --chip-bug: #3a2a10;
+  --nav-active: rgba(144, 202, 249, 0.12);
+
+  @include mat.theme((
+    color: (
+      theme-type: dark,
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Roboto, 'Segoe UI', Tahoma, sans-serif;
+  direction: rtl;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.mat-mdc-form-field {
+  text-align: right;
+}
+
+.mat-mdc-table {
+  direction: rtl;
+}
+
+.mat-mdc-header-cell {
+  font-weight: 700;
+}

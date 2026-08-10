@@ -1,0 +1,50 @@
+.layout-container {
+  height: 100vh;
+}
+
+.sidenav {
+  width: 260px;
+  border-left: 1px solid var(--border-color);
+}
+
+.sidenav-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.toolbar-title {
+  flex: 1;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.content {
+  padding: 24px;
+}
+
+a.active {
+  background: var(--nav-active);
+}
+
+@media (max-width: 768px) {
+  .sidenav {
+    width: 220px;
+  }
+
+  .content {
+    padding: 16px;
+  }
+}

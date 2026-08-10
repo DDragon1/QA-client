@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TestType {
+  manual
+  automatic
+}
+
+enum RunStatus {
+  need_to_run
+  done
+  need_to_rerun
+}
+
+enum ResultStatus {
+  success
+  failed
+  has_bug
+}
+
+model Feature {
+  id         String     @id @default(uuid())
+  name       String
+  sortOrder  Int        @default(0) @map("sort_order")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  testCases  TestCase[]
+
+  @@map("features")
+}
+
+model TestCase {
+  id              String            @id @default(uuid())
+  featureId       String            @map("feature_id")
+  scenario        String
+  steps           String            @db.Text
+  expectedResult  String            @map("expected_result") @db.Text
+  type            TestType          @default(manual)
+  isActive        Boolean           @default(true) @map("is_active")
+  sortOrder       Int               @default(0) @map("sort_order")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  feature         Feature           @relation(fields: [featureId], references: [id], onDelete: Cascade)
+  versionTestRuns VersionTestRun[]
+
+  @@map("test_cases")
+}
+
+model AppVersion {
+  id              String            @id @default(uuid())
+  name            String
+  description     String?           @db.Text
+  createdAt       DateTime          @default(now()) @map("created_at")
+  versionTestRuns VersionTestRun[]
+
+  @@map("app_versions")
+}
+
+model VersionTestRun {
+  id           String        @id @default(uuid())
+  versionId    String        @map("version_id")
+  testCaseId   String        @map("test_case_id")
+  runStatus    RunStatus     @default(need_to_run) @map("run_status")
+  resultStatus ResultStatus? @map("result_status")
+  notes        String?       @db.Text
+  rowVersion   Int           @default(1) @map("row_version")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  version      AppVersion    @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  testCase     TestCase      @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([versionId, testCaseId])
+  @@map("version_test_runs")
+}

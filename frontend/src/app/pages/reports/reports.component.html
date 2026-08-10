@@ -1,0 +1,36 @@
+<h1>{{ labels.reports.title }}</h1>
+
+@if (loading) {
+  <div class="center">
+    <mat-spinner diameter="40" />
+    <p>{{ labels.common.loading }}</p>
+  </div>
+} @else if (!versions.length) {
+  <mat-card class="empty">
+    <mat-card-content>{{ labels.common.noData }}</mat-card-content>
+  </mat-card>
+} @else {
+  <mat-card class="report-card">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="version-select">
+        <mat-label>{{ labels.reports.selectVersion }}</mat-label>
+        <mat-select [(ngModel)]="selectedVersionId">
+          @for (v of versions; track v.id) {
+            <mat-option [value]="v.id">{{ v.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <div class="actions">
+        <button mat-raised-button color="primary" [disabled]="!selectedVersionId" (click)="downloadExcel()">
+          <mat-icon>table_chart</mat-icon>
+          {{ labels.reports.downloadExcel }}
+        </button>
+        <button mat-raised-button color="accent" [disabled]="!selectedVersionId" (click)="downloadPdf()">
+          <mat-icon>picture_as_pdf</mat-icon>
+          {{ labels.reports.downloadPdf }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}

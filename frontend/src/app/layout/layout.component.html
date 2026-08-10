@@ -1,0 +1,33 @@
+<mat-sidenav-container class="layout-container">
+  <mat-sidenav mode="side" opened class="sidenav">
+    <div class="sidenav-header">
+      <mat-icon>verified</mat-icon>
+      <span>{{ labels.appTitle }}</span>
+    </div>
+    <mat-nav-list>
+      @for (item of navItems; track item.path) {
+        <a mat-list-item [routerLink]="item.path" routerLinkActive="active">
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar color="primary" class="toolbar">
+      <span class="toolbar-title">{{ labels.appTitle }}</span>
+      <span class="spacer"></span>
+      <button
+        mat-icon-button
+        (click)="theme.toggle()"
+        [attr.aria-label]="theme.isDark() ? 'מצב בהיר' : 'מצב כהה'"
+      >
+        <mat-icon>{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+    </mat-toolbar>
+    <main class="content">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>
