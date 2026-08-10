@@ -3,10 +3,23 @@
     <h1>{{ labels.versions.title }}</h1>
     <p class="page-subtitle">צרו גרסאות ופתחו מרחב עבודה להרצת הבדיקות</p>
   </div>
-  <button mat-raised-button color="primary" (click)="createVersion()">
-    <mat-icon>add</mat-icon>
-    {{ labels.versions.newVersion }}
-  </button>
+  <div class="header-actions">
+    @if (versions.length) {
+      <mat-form-field appearance="outline" class="env-filter" subscriptSizing="dynamic">
+        <mat-label>{{ labels.versions.filterEnvironment }}</mat-label>
+        <mat-select [(ngModel)]="environmentFilter">
+          <mat-option value="">{{ labels.common.all }}</mat-option>
+          @for (opt of environmentOptions; track opt.value) {
+            <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    }
+    <button mat-raised-button color="primary" (click)="createVersion()">
+      <mat-icon>add</mat-icon>
+      {{ labels.versions.newVersion }}
+    </button>
+  </div>
 </div>
 
 @if (loading) {
@@ -29,15 +42,28 @@
       </div>
     </mat-card-content>
   </mat-card>
+} @else if (!filteredVersions.length) {
+  <mat-card>
+    <mat-card-content>
+      <div class="empty-state">
+        <div class="empty-icon">
+          <mat-icon>filter_alt_off</mat-icon>
+        </div>
+        <p class="empty-title">{{ labels.common.noData }}</p>
+        <p>אין גרסאות בסביבה שנבחרה.</p>
+      </div>
+    </mat-card-content>
+  </mat-card>
 } @else {
   <div class="versions-grid">
-    @for (v of versions; track v.id) {
+    @for (v of filteredVersions; track v.id) {
       <mat-card class="version-item" [class.finished]="!!v.finishedAt">
         <mat-card-content>
           <div class="version-top">
             <div>
               <div class="name-row">
                 <h2>{{ v.name }}</h2>
+                <span class="env-badge" [attr.data-env]="v.environment">{{ v.environment }}</span>
                 @if (v.finishedAt) {
                   <span class="finished-badge">{{ labels.versions.finished }}</span>
                 }

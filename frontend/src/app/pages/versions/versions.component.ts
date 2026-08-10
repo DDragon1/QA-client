@@ -7,10 +7,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
-import { AppVersion } from '../../core/models';
-import { LABELS } from '../../core/i18n/he';
+import { AppVersion, Environment } from '../../core/models';
+import { ENVIRONMENT_OPTIONS, LABELS } from '../../core/i18n/he';
 import { VersionDialogComponent } from './version-dialog.component';
 
 @Component({
@@ -25,21 +27,30 @@ import { VersionDialogComponent } from './version-dialog.component';
     MatDialogModule,
     MatSnackBarModule,
     MatProgressSpinnerModule,
+    MatFormFieldModule,
+    MatSelectModule,
   ],
   templateUrl: './versions.component.html',
   styleUrl: './versions.component.scss',
 })
 export class VersionsComponent implements OnInit {
   readonly labels = LABELS;
+  readonly environmentOptions = ENVIRONMENT_OPTIONS;
   loading = true;
   finishingId: string | null = null;
   versions: AppVersion[] = [];
+  environmentFilter: Environment | '' = '';
 
   constructor(
     private api: ApiService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar
   ) {}
+
+  get filteredVersions(): AppVersion[] {
+    if (!this.environmentFilter) return this.versions;
+    return this.versions.filter((v) => v.environment === this.environmentFilter);
+  }
 
   ngOnInit(): void {
     this.loadVersions();
@@ -61,16 +72,22 @@ export class VersionsComponent implements OnInit {
 
   createVersion(): void {
     const ref = this.dialog.open(VersionDialogComponent, { width: '480px' });
-    ref.afterClosed().subscribe((result: { name: string; description?: string } | undefined) => {
-      if (!result) return;
-      this.api.createVersion(result.name, result.description).subscribe({
-        next: () => {
-          this.snackBar.open(LABELS.common.success, '', { duration: 2000 });
-          this.loadVersions();
-        },
-        error: () => this.snackBar.open(LABELS.common.error, '', { duration: 3000 }),
-      });
-    });
+    ref.afterClosed().subscribe(
+      (
+        result:
+          | { name: string; description?: string; environment: Environment }
+          | undefined
+      ) => {
+        if (!result) return;
+        this.api.createVersion(result.name, result.description, result.environment).subscribe({
+          next: () => {
+            this.snackBar.open(LABELS.common.success, '', { duration: 2000 });
+            this.loadVersions();
+          },
+          error: () => this.snackBar.open(LABELS.common.error, '', { duration: 3000 }),
+        });
+      }
+    );
   }
 
   finishVersion(version: AppVersion): void {

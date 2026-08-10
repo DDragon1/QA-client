@@ -1,6 +1,7 @@
 export type TestType = 'manual' | 'automatic';
 export type RunStatus = 'need_to_run' | 'done' | 'need_to_rerun';
 export type ResultStatus = 'success' | 'failed' | 'has_bug';
+export type Environment = 'INT' | 'PRP' | 'DRL' | 'OPR';
 
 export interface Feature {
   id: string;
@@ -37,6 +38,7 @@ export interface AppVersion {
   id: string;
   name: string;
   description: string | null;
+  environment: Environment;
   createdAt: string;
   finishedAt: string | null;
   stats: VersionStats;

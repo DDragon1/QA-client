@@ -38,13 +38,14 @@ export function mapRunsWithSnapshots(runs: RunWithTestCase[]): RunWithTestCase[]
 }
 
 export function toVersionDto(
-  version: Pick<AppVersion, 'id' | 'name' | 'description' | 'createdAt' | 'finishedAt'>,
+  version: Pick<AppVersion, 'id' | 'name' | 'description' | 'environment' | 'createdAt' | 'finishedAt'>,
   stats: VersionStats
 ) {
   return {
     id: version.id,
     name: version.name,
     description: version.description,
+    environment: version.environment,
     createdAt: version.createdAt,
     finishedAt: version.finishedAt,
     stats,

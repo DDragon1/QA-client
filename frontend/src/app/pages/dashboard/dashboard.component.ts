@@ -8,8 +8,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ApiService } from '../../core/services/api.service';
-import { AppVersion } from '../../core/models';
-import { LABELS } from '../../core/i18n/he';
+import { AppVersion, Environment } from '../../core/models';
+import { ENVIRONMENT_OPTIONS, LABELS } from '../../core/i18n/he';
 
 @Component({
   selector: 'app-dashboard',
@@ -29,21 +29,28 @@ import { LABELS } from '../../core/i18n/he';
 })
 export class DashboardComponent implements OnInit {
   readonly labels = LABELS;
+  readonly environmentOptions = ENVIRONMENT_OPTIONS;
   readonly circumference = 2 * Math.PI * 52;
   loading = true;
   versions: AppVersion[] = [];
+  environmentFilter: Environment | '' = '';
   selectedVersionId = '';
   selectedVersion: AppVersion | null = null;
   error = '';
 
   constructor(private api: ApiService) {}
 
+  get filteredVersions(): AppVersion[] {
+    if (!this.environmentFilter) return this.versions;
+    return this.versions.filter((v) => v.environment === this.environmentFilter);
+  }
+
   get activeVersions(): AppVersion[] {
-    return this.versions.filter((v) => !v.finishedAt);
+    return this.filteredVersions.filter((v) => !v.finishedAt);
   }
 
   get closedVersions(): AppVersion[] {
-    return this.versions.filter((v) => !!v.finishedAt);
+    return this.filteredVersions.filter((v) => !!v.finishedAt);
   }
 
   get completionPercent(): number {
@@ -64,8 +71,7 @@ export class DashboardComponent implements OnInit {
     this.api.getVersions().subscribe({
       next: (versions) => {
         this.versions = versions;
-        this.selectedVersionId = versions[0]?.id ?? '';
-        this.selectedVersion = versions[0] ?? null;
+        this.selectFirstFiltered();
         this.loading = false;
       },
       error: () => {
@@ -75,9 +81,13 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  onEnvironmentFilterChange(): void {
+    this.selectFirstFiltered();
+  }
+
   onVersionChange(versionId: string): void {
     this.selectedVersionId = versionId;
-    this.selectedVersion = this.versions.find((v) => v.id === versionId) ?? null;
+    this.selectedVersion = this.filteredVersions.find((v) => v.id === versionId) ?? null;
   }
 
   formatDate(date: string): string {
@@ -85,6 +95,12 @@ export class DashboardComponent implements OnInit {
   }
 
   versionOptionLabel(version: AppVersion): string {
-    return `${version.name} · ${this.formatDate(version.createdAt)}`;
+    return `${version.name} · ${version.environment} · ${this.formatDate(version.createdAt)}`;
+  }
+
+  private selectFirstFiltered(): void {
+    const first = this.filteredVersions[0] ?? null;
+    this.selectedVersionId = first?.id ?? '';
+    this.selectedVersion = first;
   }
 }

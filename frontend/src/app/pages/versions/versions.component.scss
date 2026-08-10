@@ -4,6 +4,17 @@
   gap: 6px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.env-filter {
+  width: 180px;
+}
+
 .versions-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -39,6 +50,59 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.env-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: var(--brand-soft);
+  color: var(--brand);
+  border: 1px solid transparent;
+}
+
+.env-badge[data-env='INT'] {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+
+.env-badge[data-env='PRP'] {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.env-badge[data-env='DRL'] {
+  background: #fff3e0;
+  color: #ef6c00;
+}
+
+.env-badge[data-env='OPR'] {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+:host-context(html.dark-theme) .env-badge[data-env='INT'] {
+  background: #1a2a3a;
+  color: #90caf9;
+}
+
+:host-context(html.dark-theme) .env-badge[data-env='PRP'] {
+  background: #2a1a3a;
+  color: #ce93d8;
+}
+
+:host-context(html.dark-theme) .env-badge[data-env='DRL'] {
+  background: #3a2a10;
+  color: #ffb74d;
+}
+
+:host-context(html.dark-theme) .env-badge[data-env='OPR'] {
+  background: #1a2e1a;
+  color: #81c784;
 }
 
 .finished-badge {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ResultStatus, RunStatus, TestType } from '@prisma/client';
+import { Environment, ResultStatus, RunStatus, TestType } from '@prisma/client';
 import {
   applyRunSnapshot,
   mapRunsWithSnapshots,
@@ -139,6 +139,7 @@ describe('toVersionDto', () => {
           id: 'ver-1',
           name: '1.0',
           description: 'desc',
+          environment: Environment.INT,
           createdAt: new Date('2026-01-01'),
           finishedAt,
         },
@@ -148,6 +149,7 @@ describe('toVersionDto', () => {
       id: 'ver-1',
       name: '1.0',
       description: 'desc',
+      environment: Environment.INT,
       createdAt: new Date('2026-01-01'),
       finishedAt,
       stats,

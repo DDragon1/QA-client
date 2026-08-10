@@ -3,6 +3,17 @@
     <h1>{{ labels.dashboard.title }}</h1>
     <p class="page-subtitle">סקירה מהירה של מצב הבדיקות לפי גרסה</p>
   </div>
+  @if (!loading && !error && versions.length) {
+    <mat-form-field appearance="outline" class="env-filter" subscriptSizing="dynamic">
+      <mat-label>{{ labels.versions.filterEnvironment }}</mat-label>
+      <mat-select [(ngModel)]="environmentFilter" (ngModelChange)="onEnvironmentFilterChange()">
+        <mat-option value="">{{ labels.common.all }}</mat-option>
+        @for (opt of environmentOptions; track opt.value) {
+          <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  }
 </div>
 
 @if (loading) {
@@ -12,7 +23,7 @@
   </div>
 } @else if (error) {
   <p class="error-text">{{ error }}</p>
-} @else if (!selectedVersion) {
+} @else if (!versions.length) {
   <mat-card class="empty-card">
     <mat-card-content>
       <div class="empty-state">
@@ -25,10 +36,22 @@
       </div>
     </mat-card-content>
   </mat-card>
+} @else if (!selectedVersion) {
+  <mat-card class="empty-card">
+    <mat-card-content>
+      <div class="empty-state">
+        <div class="empty-icon">
+          <mat-icon>filter_alt_off</mat-icon>
+        </div>
+        <p class="empty-title">{{ labels.common.noData }}</p>
+        <p>אין גרסאות בסביבה שנבחרה.</p>
+      </div>
+    </mat-card-content>
+  </mat-card>
 } @else {
   <mat-card class="version-card">
     <mat-card-content>
-      @if (versions.length > 1) {
+      @if (filteredVersions.length > 1) {
         <mat-form-field appearance="outline" class="version-select" subscriptSizing="dynamic">
           <mat-label>{{ labels.dashboard.selectVersion }}</mat-label>
           <mat-select [ngModel]="selectedVersionId" (ngModelChange)="onVersionChange($event)">
@@ -57,6 +80,9 @@
           </span>
           <div class="name-row">
             <h2>{{ selectedVersion.name }}</h2>
+            <span class="env-badge" [attr.data-env]="selectedVersion.environment">
+              {{ selectedVersion.environment }}
+            </span>
             @if (selectedVersion.finishedAt) {
               <span class="finished-badge">{{ labels.versions.finished }}</span>
             }

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { RunStatus, ResultStatus } from '@prisma/client';
+import { Environment, RunStatus, ResultStatus } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { computeVersionStats } from '../lib/stats';
@@ -15,6 +15,7 @@ const router = Router();
 const createVersionSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
+  environment: z.nativeEnum(Environment),
 });
 
 const updateRunSchema = z.object({
@@ -66,6 +67,7 @@ router.post('/', async (req, res) => {
     data: {
       name: parsed.data.name,
       description: parsed.data.description,
+      environment: parsed.data.environment,
       versionTestRuns: {
         create: activeTestCases.map((tc) => ({
           testCaseId: tc.id,

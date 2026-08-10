@@ -56,8 +56,16 @@ export class ApiService {
     return this.http.get<AppVersion>(`${this.baseUrl}/versions/${id}`);
   }
 
-  createVersion(name: string, description?: string): Observable<AppVersion> {
-    return this.http.post<AppVersion>(`${this.baseUrl}/versions`, { name, description });
+  createVersion(
+    name: string,
+    description?: string,
+    environment?: string
+  ): Observable<AppVersion> {
+    return this.http.post<AppVersion>(`${this.baseUrl}/versions`, {
+      name,
+      description,
+      environment,
+    });
   }
 
   finishVersion(id: string): Observable<AppVersion> {

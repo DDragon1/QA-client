@@ -24,6 +24,13 @@ enum ResultStatus {
   has_bug
 }
 
+enum Environment {
+  INT
+  PRP
+  DRL
+  OPR
+}
+
 model Feature {
   id         String     @id @default(uuid())
   name       String
@@ -54,6 +61,7 @@ model AppVersion {
   id              String            @id @default(uuid())
   name            String
   description     String?           @db.Text
+  environment     Environment       @default(INT)
   createdAt       DateTime          @default(now()) @map("created_at")
   finishedAt      DateTime?         @map("finished_at")
   versionTestRuns VersionTestRun[]

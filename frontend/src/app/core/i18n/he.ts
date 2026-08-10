@@ -75,6 +75,8 @@ export const LABELS = {
     newVersion: 'גרסה חדשה',
     name: 'שם גרסה',
     description: 'תיאור',
+    environment: 'סביבה',
+    filterEnvironment: 'סינון לפי סביבה',
     createdAt: 'נוצר ב',
     open: 'פתח',
     create: 'צור גרסה',
@@ -83,6 +85,12 @@ export const LABELS = {
     finishConfirm: 'לסיים את הגרסה? לא ניתן יהיה לערוך אותה יותר, ושינויים בקטלוג לא ישפיעו עליה.',
     finishSuccess: 'הגרסה הסתיימה בהצלחה',
     alreadyFinished: 'הגרסה כבר הסתיימה',
+  },
+  environment: {
+    INT: 'INT',
+    PRP: 'PRP',
+    DRL: 'DRL',
+    OPR: 'OPR',
   },
   workspace: {
     title: 'מרחב עבודה',
@@ -117,4 +125,11 @@ export const RESULT_STATUS_OPTIONS: Array<{ value: string; label: string }> = [
 export const TEST_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'manual', label: LABELS.testType.manual },
   { value: 'automatic', label: LABELS.testType.automatic },
+];
+
+export const ENVIRONMENT_OPTIONS: Array<{ value: 'INT' | 'PRP' | 'DRL' | 'OPR'; label: string }> = [
+  { value: 'INT', label: LABELS.environment.INT },
+  { value: 'PRP', label: LABELS.environment.PRP },
+  { value: 'DRL', label: LABELS.environment.DRL },
+  { value: 'OPR', label: LABELS.environment.OPR },
 ];
