@@ -3,6 +3,11 @@ import { RunStatus, ResultStatus } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
 import { computeVersionStats } from '../lib/stats';
+import {
+  mapRunsWithSnapshots,
+  snapshotFromTestCase,
+  toVersionDto,
+} from '../lib/versionSnapshot';
 import { generateExcelReport, generatePdfReport } from '../services/report.service';
 
 const router = Router();
@@ -19,6 +24,17 @@ const updateRunSchema = z.object({
   rowVersion: z.number().int().positive(),
 });
 
+const runInclude = {
+  testCase: {
+    include: { feature: true },
+  },
+} as const;
+
+const runOrderBy = [
+  { testCase: { feature: { sortOrder: 'asc' as const } } },
+  { testCase: { sortOrder: 'asc' as const } },
+];
+
 router.get('/', async (_req, res) => {
   const versions = await prisma.appVersion.findMany({
     orderBy: { createdAt: 'desc' },
@@ -29,15 +45,9 @@ router.get('/', async (_req, res) => {
     },
   });
 
-  const result = versions.map((v) => ({
-    id: v.id,
-    name: v.name,
-    description: v.description,
-    createdAt: v.createdAt,
-    stats: computeVersionStats(v.versionTestRuns),
-  }));
-
-  res.json(result);
+  res.json(
+    versions.map((v) => toVersionDto(v, computeVersionStats(v.versionTestRuns)))
+  );
 });
 
 router.post('/', async (req, res) => {
@@ -70,13 +80,49 @@ router.post('/', async (req, res) => {
     },
   });
 
-  res.status(201).json({
-    id: version.id,
-    name: version.name,
-    description: version.description,
-    createdAt: version.createdAt,
-    stats: computeVersionStats(version.versionTestRuns),
+  res.status(201).json(toVersionDto(version, computeVersionStats(version.versionTestRuns)));
+});
+
+router.post('/:id/finish', async (req, res) => {
+  const version = await prisma.appVersion.findUnique({
+    where: { id: req.params.id },
   });
+
+  if (!version) {
+    res.status(404).json({ error: 'גרסה לא נמצאה' });
+    return;
+  }
+
+  if (version.finishedAt) {
+    res.status(400).json({ error: 'הגרסה כבר הסתיימה' });
+    return;
+  }
+
+  const finished = await prisma.$transaction(async (tx) => {
+    const runs = await tx.versionTestRun.findMany({
+      where: { versionId: version.id },
+      include: runInclude,
+    });
+
+    for (const run of runs) {
+      await tx.versionTestRun.update({
+        where: { id: run.id },
+        data: snapshotFromTestCase(run.testCase),
+      });
+    }
+
+    return tx.appVersion.update({
+      where: { id: version.id },
+      data: { finishedAt: new Date() },
+      include: {
+        versionTestRuns: {
+          select: { runStatus: true, resultStatus: true },
+        },
+      },
+    });
+  });
+
+  res.json(toVersionDto(finished, computeVersionStats(finished.versionTestRuns)));
 });
 
 router.get('/:id', async (req, res) => {
@@ -94,13 +140,7 @@ router.get('/:id', async (req, res) => {
     return;
   }
 
-  res.json({
-    id: version.id,
-    name: version.name,
-    description: version.description,
-    createdAt: version.createdAt,
-    stats: computeVersionStats(version.versionTestRuns),
-  });
+  res.json(toVersionDto(version, computeVersionStats(version.versionTestRuns)));
 });
 
 router.get('/:id/runs', async (req, res) => {
@@ -115,24 +155,31 @@ router.get('/:id/runs', async (req, res) => {
 
   const runs = await prisma.versionTestRun.findMany({
     where: { versionId: req.params.id },
-    include: {
-      testCase: {
-        include: { feature: true },
-      },
-    },
-    orderBy: [
-      { testCase: { feature: { sortOrder: 'asc' } } },
-      { testCase: { sortOrder: 'asc' } },
-    ],
+    include: runInclude,
+    orderBy: runOrderBy,
   });
 
-  res.json(runs);
+  res.json(mapRunsWithSnapshots(runs));
 });
 
 router.patch('/:versionId/runs/:runId', async (req, res) => {
   const parsed = updateRunSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: 'נתונים לא תקינים', details: parsed.error.flatten() });
+    return;
+  }
+
+  const version = await prisma.appVersion.findUnique({
+    where: { id: req.params.versionId },
+  });
+
+  if (!version) {
+    res.status(404).json({ error: 'גרסה לא נמצאה' });
+    return;
+  }
+
+  if (version.finishedAt) {
+    res.status(403).json({ error: 'לא ניתן לערוך גרסה שסיימה' });
     return;
   }
 
@@ -183,14 +230,10 @@ router.patch('/:versionId/runs/:runId', async (req, res) => {
 
   const updated = await prisma.versionTestRun.findUnique({
     where: { id: req.params.runId },
-    include: {
-      testCase: {
-        include: { feature: true },
-      },
-    },
+    include: runInclude,
   });
 
-  res.json(updated);
+  res.json(updated ? mapRunsWithSnapshots([updated])[0] : updated);
 });
 
 router.get('/:id/report.xlsx', async (req, res) => {
@@ -205,18 +248,11 @@ router.get('/:id/report.xlsx', async (req, res) => {
 
   const runs = await prisma.versionTestRun.findMany({
     where: { versionId: req.params.id },
-    include: {
-      testCase: {
-        include: { feature: true },
-      },
-    },
-    orderBy: [
-      { testCase: { feature: { sortOrder: 'asc' } } },
-      { testCase: { sortOrder: 'asc' } },
-    ],
+    include: runInclude,
+    orderBy: runOrderBy,
   });
 
-  const buffer = await generateExcelReport(version, runs);
+  const buffer = await generateExcelReport(version, mapRunsWithSnapshots(runs));
   const filename = encodeURIComponent(`qa-report-${version.name}.xlsx`);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
@@ -235,21 +271,15 @@ router.get('/:id/report.pdf', async (req, res) => {
 
   const runs = await prisma.versionTestRun.findMany({
     where: { versionId: req.params.id },
-    include: {
-      testCase: {
-        include: { feature: true },
-      },
-    },
-    orderBy: [
-      { testCase: { feature: { sortOrder: 'asc' } } },
-      { testCase: { sortOrder: 'asc' } },
-    ],
+    include: runInclude,
+    orderBy: runOrderBy,
   });
 
-  res.setHeader('Content-Type', 'application/pdf');
   const filename = encodeURIComponent(`qa-report-${version.name}.pdf`);
+  const pdf = await generatePdfReport(version, mapRunsWithSnapshots(runs));
+  res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
-  generatePdfReport(version, runs, res);
+  res.send(pdf);
 });
 
 export default router;

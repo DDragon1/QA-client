@@ -1,26 +1,131 @@
-.header {
+.page-header button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.versions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.version-item {
+  height: 100%;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.version-item:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md) !important;
+}
+
+.version-top {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 18px;
 }
 
-.center {
+.version-top h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.name-row {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  padding: 48px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.empty {
-  margin-top: 24px;
+.finished-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  border: 1px solid var(--border-soft);
 }
 
-.table-container {
-  overflow-x: auto;
+.version-item.finished {
+  opacity: 0.92;
 }
 
-.versions-table {
-  width: 100%;
+.version-desc {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.created {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+  background: var(--surface-muted);
+  padding: 4px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.progress-block {
+  margin-bottom: 14px;
+}
+
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.progress-meta strong {
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.mini-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.pill {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--surface-muted);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.pill.success {
+  background: var(--chip-success);
+  color: var(--status-success);
+}
+
+.pill.failed {
+  background: var(--chip-failed);
+  color: var(--status-failed);
+}
+
+.open-btn,
+.finish-btn {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }

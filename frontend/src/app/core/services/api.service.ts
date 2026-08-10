@@ -60,6 +60,10 @@ export class ApiService {
     return this.http.post<AppVersion>(`${this.baseUrl}/versions`, { name, description });
   }
 
+  finishVersion(id: string): Observable<AppVersion> {
+    return this.http.post<AppVersion>(`${this.baseUrl}/versions/${id}/finish`, {});
+  }
+
   getVersionRuns(versionId: string): Observable<VersionTestRun[]> {
     return this.http.get<VersionTestRun[]>(`${this.baseUrl}/versions/${versionId}/runs`);
   }

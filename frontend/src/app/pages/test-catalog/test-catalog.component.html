@@ -1,15 +1,18 @@
-<div class="header">
-  <h1>{{ labels.catalog.title }}</h1>
+<div class="page-header">
+  <div>
+    <h1>{{ labels.catalog.title }}</h1>
+    <p class="page-subtitle">ניהול תכולות ותרחישי בדיקה במאסטר</p>
+  </div>
   <div class="actions">
-    <button mat-raised-button color="primary" (click)="addFeature()">
+    <button mat-stroked-button (click)="addFeature()">
       <mat-icon>folder_open</mat-icon>
       {{ labels.catalog.addFeature }}
     </button>
-    <button mat-raised-button (click)="addTest()" [disabled]="!features.length">
+    <button mat-raised-button color="primary" (click)="addTest()" [disabled]="!features.length">
       <mat-icon>add</mat-icon>
       {{ labels.catalog.addTest }}
     </button>
-    <label mat-raised-button class="import-btn">
+    <label mat-stroked-button class="import-btn">
       <mat-icon>upload_file</mat-icon>
       {{ labels.catalog.importExcel }}
       <input type="file" accept=".xlsx,.xls" hidden (change)="onFileSelected($event)" />
@@ -17,42 +20,58 @@
   </div>
 </div>
 
-<div class="filters">
-  <mat-form-field appearance="outline" class="filter-field">
-    <mat-label>{{ labels.workspace.filterFeature }}</mat-label>
-    <mat-select [(ngModel)]="filterFeature" (ngModelChange)="onFilterChange()">
-      <mat-option value="">{{ labels.common.all }}</mat-option>
-      @for (f of featureOptions; track f) {
-        <mat-option [value]="f">{{ f }}</mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
+<mat-card class="filters">
+  <mat-card-content>
+    <div class="filter-row">
+      <mat-form-field appearance="outline" class="filter-field">
+        <mat-label>{{ labels.workspace.filterFeature }}</mat-label>
+        <mat-select [(ngModel)]="filterFeature" (ngModelChange)="onFilterChange()">
+          <mat-option value="">{{ labels.common.all }}</mat-option>
+          @for (f of featureOptions; track f) {
+            <mat-option [value]="f">{{ f }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
 
-  <mat-slide-toggle [(ngModel)]="showInactive" (ngModelChange)="onFilterChange()">
-    {{ labels.catalog.showInactive }}
-  </mat-slide-toggle>
-</div>
+      <mat-slide-toggle [(ngModel)]="showInactive" (ngModelChange)="onFilterChange()">
+        {{ labels.catalog.showInactive }}
+      </mat-slide-toggle>
+    </div>
+  </mat-card-content>
+</mat-card>
 
 @if (loading) {
-  <div class="center">
+  <div class="center-state">
     <mat-spinner diameter="40" />
     <p>{{ labels.common.loading }}</p>
   </div>
 } @else if (!catalogRows.length) {
-  <mat-card class="empty">
-    <mat-card-content>{{ labels.common.noData }}</mat-card-content>
+  <mat-card>
+    <mat-card-content>
+      <div class="empty-state">
+        <div class="empty-icon">
+          <mat-icon>library_books</mat-icon>
+        </div>
+        <p class="empty-title">{{ labels.common.noData }}</p>
+        <p>הוסיפו תכולה ובדיקה ראשונה, או ייבאו קובץ אקסל קיים.</p>
+      </div>
+    </mat-card-content>
   </mat-card>
 } @else {
   <div class="table-container">
     <table mat-table [dataSource]="catalogRows" class="catalog-table">
       <ng-container matColumnDef="feature">
         <th mat-header-cell *matHeaderCellDef>{{ labels.common.feature }}</th>
-        <td mat-cell *matCellDef="let row">{{ row.featureName }}</td>
+        <td mat-cell *matCellDef="let row">
+          <span class="feature-name">{{ row.featureName }}</span>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="scenario">
         <th mat-header-cell *matHeaderCellDef>{{ labels.common.scenario }}</th>
-        <td mat-cell *matCellDef="let row">{{ row.scenario }}</td>
+        <td mat-cell *matCellDef="let row">
+          <strong>{{ row.scenario }}</strong>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="steps">
@@ -62,12 +81,16 @@
 
       <ng-container matColumnDef="expectedResult">
         <th mat-header-cell *matHeaderCellDef>{{ labels.common.expectedResult }}</th>
-        <td mat-cell *matCellDef="let row" class="text-cell">{{ row.expectedResult }}</td>
+        <td mat-cell *matCellDef="let row" class="text-cell muted">{{ row.expectedResult }}</td>
       </ng-container>
 
       <ng-container matColumnDef="type">
         <th mat-header-cell *matHeaderCellDef>{{ labels.common.type }}</th>
-        <td mat-cell *matCellDef="let row">{{ typeLabel(row.type) }}</td>
+        <td mat-cell *matCellDef="let row">
+          <span class="type-badge" [class.automatic]="row.type === 'automatic'">
+            {{ typeLabel(row.type) }}
+          </span>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="active">
@@ -83,17 +106,17 @@
       <ng-container matColumnDef="actions">
         <th mat-header-cell *matHeaderCellDef>{{ labels.common.actions }}</th>
         <td mat-cell *matCellDef="let row">
-          <button mat-icon-button (click)="editTest(row)" aria-label="edit">
+          <button mat-icon-button (click)="editTest(row)" [attr.aria-label]="labels.common.edit">
             <mat-icon>edit</mat-icon>
           </button>
-          <button mat-icon-button color="warn" (click)="deleteTest(row)" aria-label="delete">
+          <button mat-icon-button color="warn" (click)="deleteTest(row)" [attr.aria-label]="labels.common.delete">
             <mat-icon>delete</mat-icon>
           </button>
         </td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns" [class.inactive-row]="!row.isActive"></tr>
     </table>
   </div>
 }

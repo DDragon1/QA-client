@@ -47,6 +47,10 @@ export const LABELS = {
   dashboard: {
     title: 'לוח בקרה',
     latestVersion: 'גרסה אחרונה',
+    activeVersion: 'גרסה פעילה',
+    selectVersion: 'בחר גרסה',
+    activeVersions: 'גרסאות פעילות',
+    closedVersions: 'גרסאות שהסתיימו',
     openWorkspace: 'פתח מרחב עבודה',
     stats: {
       total: 'סה"כ בדיקות',
@@ -74,6 +78,11 @@ export const LABELS = {
     createdAt: 'נוצר ב',
     open: 'פתח',
     create: 'צור גרסה',
+    finish: 'סיים גרסה',
+    finished: 'הסתיימה',
+    finishConfirm: 'לסיים את הגרסה? לא ניתן יהיה לערוך אותה יותר, ושינויים בקטלוג לא ישפיעו עליה.',
+    finishSuccess: 'הגרסה הסתיימה בהצלחה',
+    alreadyFinished: 'הגרסה כבר הסתיימה',
   },
   workspace: {
     title: 'מרחב עבודה',
@@ -82,6 +91,7 @@ export const LABELS = {
     filterRunStatus: 'סטטוס הרצה',
     filterResultStatus: 'תוצאה',
     filterType: 'סוג בדיקה',
+    lockedBanner: 'גרסה זו הסתיימה ואינה ניתנת לעריכה',
   },
   reports: {
     title: 'דוחות',

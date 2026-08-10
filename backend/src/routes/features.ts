@@ -62,12 +62,31 @@ router.patch('/:id', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
-  try {
-    await prisma.feature.delete({ where: { id: req.params.id } });
-    res.status(204).send();
-  } catch {
+  const existing = await prisma.feature.findUnique({
+    where: { id: req.params.id },
+    select: { id: true },
+  });
+
+  if (!existing) {
     res.status(404).json({ error: 'תכולה לא נמצאה' });
+    return;
   }
+
+  const lockedRun = await prisma.versionTestRun.findFirst({
+    where: {
+      testCase: { featureId: req.params.id },
+      version: { finishedAt: { not: null } },
+    },
+    select: { id: true },
+  });
+
+  if (lockedRun) {
+    res.status(409).json({ error: 'לא ניתן למחוק תכולה שכלולה בגרסה שסיימה' });
+    return;
+  }
+
+  await prisma.feature.delete({ where: { id: req.params.id } });
+  res.status(204).send();
 });
 
 export default router;

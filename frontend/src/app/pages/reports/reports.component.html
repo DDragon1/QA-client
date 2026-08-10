@@ -1,17 +1,40 @@
-<h1>{{ labels.reports.title }}</h1>
+<div class="page-header">
+  <div>
+    <h1>{{ labels.reports.title }}</h1>
+    <p class="page-subtitle">ייצוא תוצאות הבדיקות ל־Excel או PDF</p>
+  </div>
+</div>
 
 @if (loading) {
-  <div class="center">
+  <div class="center-state">
     <mat-spinner diameter="40" />
     <p>{{ labels.common.loading }}</p>
   </div>
 } @else if (!versions.length) {
-  <mat-card class="empty">
-    <mat-card-content>{{ labels.common.noData }}</mat-card-content>
+  <mat-card>
+    <mat-card-content>
+      <div class="empty-state">
+        <div class="empty-icon">
+          <mat-icon>summarize</mat-icon>
+        </div>
+        <p class="empty-title">{{ labels.common.noData }}</p>
+        <p>אין גרסאות לייצוא. צרו גרסה תחילה בעמוד הגרסאות.</p>
+      </div>
+    </mat-card-content>
   </mat-card>
 } @else {
   <mat-card class="report-card">
     <mat-card-content>
+      <div class="report-intro">
+        <div class="report-icon" aria-hidden="true">
+          <mat-icon>file_download</mat-icon>
+        </div>
+        <div>
+          <h2>הורדת דוח</h2>
+          <p>בחרו גרסה והורידו את סיכום ההרצות בפורמט המועדף עליכם.</p>
+        </div>
+      </div>
+
       <mat-form-field appearance="outline" class="version-select">
         <mat-label>{{ labels.reports.selectVersion }}</mat-label>
         <mat-select [(ngModel)]="selectedVersionId">
@@ -26,7 +49,7 @@
           <mat-icon>table_chart</mat-icon>
           {{ labels.reports.downloadExcel }}
         </button>
-        <button mat-raised-button color="accent" [disabled]="!selectedVersionId" (click)="downloadPdf()">
+        <button mat-stroked-button [disabled]="!selectedVersionId" (click)="downloadPdf()">
           <mat-icon>picture_as_pdf</mat-icon>
           {{ labels.reports.downloadPdf }}
         </button>

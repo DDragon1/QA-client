@@ -63,14 +63,15 @@ router.post('/', async (req, res) => {
     include: { feature: true },
   });
 
-  const latestVersion = await prisma.appVersion.findFirst({
+  const latestOpenVersion = await prisma.appVersion.findFirst({
+    where: { finishedAt: null },
     orderBy: { createdAt: 'desc' },
   });
 
-  if (latestVersion) {
+  if (latestOpenVersion) {
     await prisma.versionTestRun.create({
       data: {
-        versionId: latestVersion.id,
+        versionId: latestOpenVersion.id,
         testCaseId: testCase.id,
       },
     });
@@ -99,12 +100,31 @@ router.patch('/:id', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
-  try {
-    await prisma.testCase.delete({ where: { id: req.params.id } });
-    res.status(204).send();
-  } catch {
+  const existing = await prisma.testCase.findUnique({
+    where: { id: req.params.id },
+    select: { id: true },
+  });
+
+  if (!existing) {
     res.status(404).json({ error: 'בדיקה לא נמצאה' });
+    return;
   }
+
+  const lockedRun = await prisma.versionTestRun.findFirst({
+    where: {
+      testCaseId: req.params.id,
+      version: { finishedAt: { not: null } },
+    },
+    select: { id: true },
+  });
+
+  if (lockedRun) {
+    res.status(409).json({ error: 'לא ניתן למחוק בדיקה שכלולה בגרסה שסיימה' });
+    return;
+  }
+
+  await prisma.testCase.delete({ where: { id: req.params.id } });
+  res.status(204).send();
 });
 
 export default router;

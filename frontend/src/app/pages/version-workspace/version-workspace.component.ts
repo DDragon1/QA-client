@@ -9,6 +9,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
 import { AppVersion, VersionTestRun } from '../../core/models';
@@ -32,6 +34,8 @@ import {
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatChipsModule,
+    MatIconModule,
+    MatButtonModule,
   ],
   templateUrl: './version-workspace.component.html',
   styleUrl: './version-workspace.component.scss',
@@ -43,6 +47,7 @@ export class VersionWorkspaceComponent implements OnInit {
   readonly testTypeOptions = TEST_TYPE_OPTIONS;
 
   loading = true;
+  finishing = false;
   version: AppVersion | null = null;
   runs: VersionTestRun[] = [];
   filteredRuns: VersionTestRun[] = [];
@@ -68,6 +73,10 @@ export class VersionWorkspaceComponent implements OnInit {
     private api: ApiService,
     private snackBar: MatSnackBar
   ) {}
+
+  get isFinished(): boolean {
+    return !!this.version?.finishedAt;
+  }
 
   ngOnInit(): void {
     this.versionId = this.route.snapshot.paramMap.get('id') ?? '';
@@ -116,7 +125,33 @@ export class VersionWorkspaceComponent implements OnInit {
     this.applyFilters();
   }
 
+  finishVersion(): void {
+    if (this.isFinished || this.finishing) return;
+    if (!confirm(LABELS.versions.finishConfirm)) return;
+
+    this.finishing = true;
+    this.api.finishVersion(this.versionId).subscribe({
+      next: (version) => {
+        this.version = version;
+        this.finishing = false;
+        this.snackBar.open(LABELS.versions.finishSuccess, '', { duration: 2500 });
+        this.loadData();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.finishing = false;
+        const message =
+          err.status === 400
+            ? LABELS.versions.alreadyFinished
+            : (err.error?.error as string | undefined) || LABELS.common.error;
+        this.snackBar.open(message, '', { duration: 3500 });
+        if (err.status === 400) this.loadData();
+      },
+    });
+  }
+
   updateRun(run: VersionTestRun, field: 'runStatus' | 'resultStatus' | 'notes', value: string | null): void {
+    if (this.isFinished) return;
+
     const payload: {
       runStatus?: string;
       resultStatus?: string | null;
@@ -140,6 +175,9 @@ export class VersionWorkspaceComponent implements OnInit {
       error: (err: HttpErrorResponse) => {
         if (err.status === 409) {
           this.snackBar.open(LABELS.common.conflict, '', { duration: 4000 });
+          this.loadData();
+        } else if (err.status === 403) {
+          this.snackBar.open(LABELS.workspace.lockedBanner, '', { duration: 3500 });
           this.loadData();
         } else {
           this.snackBar.open(LABELS.common.error, '', { duration: 3000 });

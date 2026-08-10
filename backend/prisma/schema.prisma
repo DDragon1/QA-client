@@ -55,22 +55,28 @@ model AppVersion {
   name            String
   description     String?           @db.Text
   createdAt       DateTime          @default(now()) @map("created_at")
+  finishedAt      DateTime?         @map("finished_at")
   versionTestRuns VersionTestRun[]
 
   @@map("app_versions")
 }
 
 model VersionTestRun {
-  id           String        @id @default(uuid())
-  versionId    String        @map("version_id")
-  testCaseId   String        @map("test_case_id")
-  runStatus    RunStatus     @default(need_to_run) @map("run_status")
-  resultStatus ResultStatus? @map("result_status")
-  notes        String?       @db.Text
-  rowVersion   Int           @default(1) @map("row_version")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
-  version      AppVersion    @relation(fields: [versionId], references: [id], onDelete: Cascade)
-  testCase     TestCase      @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  id                       String        @id @default(uuid())
+  versionId                String        @map("version_id")
+  testCaseId               String        @map("test_case_id")
+  runStatus                RunStatus     @default(need_to_run) @map("run_status")
+  resultStatus             ResultStatus? @map("result_status")
+  notes                    String?       @db.Text
+  rowVersion               Int           @default(1) @map("row_version")
+  updatedAt                DateTime      @updatedAt @map("updated_at")
+  snapshotFeatureName      String?       @map("snapshot_feature_name")
+  snapshotScenario         String?       @map("snapshot_scenario")
+  snapshotSteps            String?       @db.Text @map("snapshot_steps")
+  snapshotExpectedResult   String?       @db.Text @map("snapshot_expected_result")
+  snapshotType             TestType?     @map("snapshot_type")
+  version                  AppVersion    @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  testCase                 TestCase      @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
 
   @@unique([versionId, testCaseId])
   @@map("version_test_runs")

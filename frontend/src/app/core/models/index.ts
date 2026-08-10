@@ -38,6 +38,7 @@ export interface AppVersion {
   name: string;
   description: string | null;
   createdAt: string;
+  finishedAt: string | null;
   stats: VersionStats;
 }
 

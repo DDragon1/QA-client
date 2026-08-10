@@ -12,6 +12,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
 import { Feature, TestCase } from '../../core/models';
 import { LABELS, TEST_TYPE_OPTIONS } from '../../core/i18n/he';
@@ -153,7 +154,9 @@ export class TestCatalogComponent implements OnInit {
         this.snackBar.open(LABELS.common.success, '', { duration: 2000 });
         this.loadFeatures();
       },
-      error: () => this.snackBar.open(LABELS.common.error, '', { duration: 3000 }),
+      error: (err: HttpErrorResponse) => {
+        this.snackBar.open(err.error?.error ?? LABELS.common.error, '', { duration: 4000 });
+      },
     });
   }
 

@@ -1,25 +1,54 @@
 @if (loading) {
-  <div class="center">
+  <div class="center-state">
     <mat-spinner diameter="40" />
     <p>{{ labels.common.loading }}</p>
   </div>
 } @else if (version) {
-  <div class="header">
+  <div class="page-header">
     <div>
-      <h1>{{ labels.workspace.title }} — {{ version.name }}</h1>
-      @if (version.description) {
-        <p class="subtitle">{{ version.description }}</p>
+      <div class="title-row">
+        <h1>{{ labels.workspace.title }}</h1>
+        @if (isFinished) {
+          <span class="finished-badge">{{ labels.versions.finished }}</span>
+        }
+      </div>
+      <p class="page-subtitle">
+        {{ version.name }}
+        @if (version.description) {
+          · {{ version.description }}
+        }
+      </p>
+    </div>
+    <div class="header-actions">
+      <div class="stats-row">
+        <span class="stat-chip">{{ labels.dashboard.stats.total }}: {{ version.stats.total }}</span>
+        <span class="stat-chip need-run">{{ labels.dashboard.stats.needToRun }}: {{ version.stats.needToRun }}</span>
+        <span class="stat-chip done">{{ labels.dashboard.stats.done }}: {{ version.stats.done }}</span>
+        <span class="stat-chip success">{{ labels.dashboard.stats.success }}: {{ version.stats.success }}</span>
+        <span class="stat-chip failed">{{ labels.dashboard.stats.failed }}: {{ version.stats.failed }}</span>
+        <span class="stat-chip bug">{{ labels.dashboard.stats.hasBug }}: {{ version.stats.hasBug }}</span>
+      </div>
+      @if (!isFinished) {
+        <button
+          mat-stroked-button
+          color="warn"
+          class="finish-btn"
+          [disabled]="finishing"
+          (click)="finishVersion()"
+        >
+          <mat-icon>lock</mat-icon>
+          {{ labels.versions.finish }}
+        </button>
       }
     </div>
-    <div class="stats-row">
-      <span class="stat-chip">{{ labels.dashboard.stats.total }}: {{ version.stats.total }}</span>
-      <span class="stat-chip need-run">{{ labels.dashboard.stats.needToRun }}: {{ version.stats.needToRun }}</span>
-      <span class="stat-chip done">{{ labels.dashboard.stats.done }}: {{ version.stats.done }}</span>
-      <span class="stat-chip success">{{ labels.dashboard.stats.success }}: {{ version.stats.success }}</span>
-      <span class="stat-chip failed">{{ labels.dashboard.stats.failed }}: {{ version.stats.failed }}</span>
-      <span class="stat-chip bug">{{ labels.dashboard.stats.hasBug }}: {{ version.stats.hasBug }}</span>
-    </div>
   </div>
+
+  @if (isFinished) {
+    <div class="locked-banner" role="status">
+      <mat-icon>lock</mat-icon>
+      <span>{{ labels.workspace.lockedBanner }}</span>
+    </div>
+  }
 
   <mat-card class="filters">
     <mat-card-content>
@@ -68,21 +97,31 @@
   </mat-card>
 
   @if (!filteredRuns.length) {
-    <mat-card class="empty">
-      <mat-card-content>{{ labels.common.noData }}</mat-card-content>
+    <mat-card>
+      <mat-card-content>
+        <div class="empty-state">
+          <div class="empty-icon">
+            <mat-icon>filter_list</mat-icon>
+          </div>
+          <p class="empty-title">{{ labels.common.noData }}</p>
+          <p>נסו לשנות את הסינון או לבדוק שיש בדיקות בגרסה זו.</p>
+        </div>
+      </mat-card-content>
     </mat-card>
   } @else {
     <div class="table-container">
       <table mat-table [dataSource]="filteredRuns" class="workspace-table">
         <ng-container matColumnDef="feature">
           <th mat-header-cell *matHeaderCellDef>{{ labels.common.feature }}</th>
-          <td mat-cell *matCellDef="let run">{{ run.testCase.feature.name }}</td>
+          <td mat-cell *matCellDef="let run">
+            <span class="feature-name">{{ run.testCase.feature.name }}</span>
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="scenario">
           <th mat-header-cell *matHeaderCellDef>{{ labels.common.scenario }}</th>
           <td mat-cell *matCellDef="let run">
-            <strong>{{ run.testCase.scenario }}</strong>
+            <strong class="scenario-title">{{ run.testCase.scenario }}</strong>
             <div class="meta">{{ run.testCase.steps }}</div>
             <div class="meta expected">{{ labels.common.expectedResult }}: {{ run.testCase.expectedResult }}</div>
           </td>
@@ -90,52 +129,68 @@
 
         <ng-container matColumnDef="type">
           <th mat-header-cell *matHeaderCellDef>{{ labels.common.type }}</th>
-          <td mat-cell *matCellDef="let run">{{ typeLabel(run.testCase.type) }}</td>
+          <td mat-cell *matCellDef="let run">
+            <span class="type-badge" [class.automatic]="run.testCase.type === 'automatic'">
+              {{ typeLabel(run.testCase.type) }}
+            </span>
+          </td>
         </ng-container>
 
         <ng-container matColumnDef="runStatus">
           <th mat-header-cell *matHeaderCellDef>{{ labels.common.runStatus }}</th>
           <td mat-cell *matCellDef="let run">
-            <mat-form-field appearance="outline" class="inline-field">
-              <mat-select
-                [value]="run.runStatus"
-                (selectionChange)="updateRun(run, 'runStatus', $event.value)"
-              >
-                @for (opt of runStatusOptions; track opt.value) {
-                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
+            @if (isFinished) {
+              <span class="readonly-value">{{ runStatusLabel(run.runStatus) }}</span>
+            } @else {
+              <mat-form-field appearance="outline" class="inline-field" subscriptSizing="dynamic">
+                <mat-select
+                  [value]="run.runStatus"
+                  (selectionChange)="updateRun(run, 'runStatus', $event.value)"
+                >
+                  @for (opt of runStatusOptions; track opt.value) {
+                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
           </td>
         </ng-container>
 
         <ng-container matColumnDef="resultStatus">
           <th mat-header-cell *matHeaderCellDef>{{ labels.common.resultStatus }}</th>
           <td mat-cell *matCellDef="let run">
-            <mat-form-field appearance="outline" class="inline-field">
-              <mat-select
-                [value]="run.resultStatus ?? ''"
-                (selectionChange)="updateRun(run, 'resultStatus', $event.value || null)"
-              >
-                <mat-option value="">-</mat-option>
-                @for (opt of resultStatusOptions; track opt.value) {
-                  <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
+            @if (isFinished) {
+              <span class="readonly-value">{{ resultStatusLabel(run.resultStatus) }}</span>
+            } @else {
+              <mat-form-field appearance="outline" class="inline-field" subscriptSizing="dynamic">
+                <mat-select
+                  [value]="run.resultStatus ?? ''"
+                  (selectionChange)="updateRun(run, 'resultStatus', $event.value || null)"
+                >
+                  <mat-option value="">-</mat-option>
+                  @for (opt of resultStatusOptions; track opt.value) {
+                    <mat-option [value]="opt.value">{{ opt.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            }
           </td>
         </ng-container>
 
         <ng-container matColumnDef="notes">
           <th mat-header-cell *matHeaderCellDef>{{ labels.common.notes }}</th>
           <td mat-cell *matCellDef="let run">
-            <mat-form-field appearance="outline" class="notes-field">
-              <input
-                matInput
-                [value]="run.notes ?? ''"
-                (blur)="updateRun(run, 'notes', ($any($event.target).value || null))"
-              />
-            </mat-form-field>
+            @if (isFinished) {
+              <span class="readonly-notes">{{ run.notes || '-' }}</span>
+            } @else {
+              <mat-form-field appearance="outline" class="notes-field" subscriptSizing="dynamic">
+                <input
+                  matInput
+                  [value]="run.notes ?? ''"
+                  (blur)="updateRun(run, 'notes', ($any($event.target).value || null))"
+                />
+              </mat-form-field>
+            }
           </td>
         </ng-container>
 

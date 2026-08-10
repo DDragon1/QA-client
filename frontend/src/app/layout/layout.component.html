@@ -1,33 +1,48 @@
 <mat-sidenav-container class="layout-container">
   <mat-sidenav mode="side" opened class="sidenav">
-    <div class="sidenav-header">
-      <mat-icon>verified</mat-icon>
-      <span>{{ labels.appTitle }}</span>
+    <div class="sidenav-brand">
+      <div class="brand-mark" aria-hidden="true">
+        <mat-icon>verified</mat-icon>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">{{ labels.appTitle }}</span>
+        <span class="brand-tagline">בדיקות ידניות ואוטומטיות</span>
+      </div>
     </div>
-    <mat-nav-list>
+
+    <mat-nav-list class="nav-list">
       @for (item of navItems; track item.path) {
-        <a mat-list-item [routerLink]="item.path" routerLinkActive="active">
+        <a
+          mat-list-item
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
+          class="nav-item"
+        >
           <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
           <span matListItemTitle>{{ item.label }}</span>
         </a>
       }
     </mat-nav-list>
-  </mat-sidenav>
 
-  <mat-sidenav-content>
-    <mat-toolbar color="primary" class="toolbar">
-      <span class="toolbar-title">{{ labels.appTitle }}</span>
-      <span class="spacer"></span>
+    <div class="sidenav-footer">
       <button
-        mat-icon-button
+        mat-stroked-button
+        class="theme-toggle"
         (click)="theme.toggle()"
         [attr.aria-label]="theme.isDark() ? 'מצב בהיר' : 'מצב כהה'"
       >
         <mat-icon>{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        <span>{{ theme.isDark() ? 'מצב בהיר' : 'מצב כהה' }}</span>
       </button>
-    </mat-toolbar>
-    <main class="content">
-      <router-outlet />
-    </main>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="main-area">
+    <div class="content-shell">
+      <main class="content page-enter">
+        <router-outlet />
+      </main>
+    </div>
   </mat-sidenav-content>
 </mat-sidenav-container>

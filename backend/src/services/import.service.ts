@@ -1,36 +1,7 @@
 import ExcelJS from 'exceljs';
-import { RunStatus, ResultStatus } from '@prisma/client';
+import { RunStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma';
-
-const COLUMN_MAP = {
-  feature: ['תכולה'],
-  scenario: ['תרחיש'],
-  steps: ['שלבים לביצוע'],
-  expected: ['תוצר צפוי'],
-  executed: ['האם בוצע'],
-  notes: ['הערות'],
-};
-
-function findColumnIndex(headers: string[], keys: string[]): number {
-  for (let i = 0; i < headers.length; i++) {
-    const header = (headers[i] ?? '').toString().trim();
-    if (keys.some((k) => header === k)) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-function parseExecuted(value: unknown): { runStatus: RunStatus; resultStatus: ResultStatus | null } {
-  const text = (value ?? '').toString().trim().toLowerCase();
-  if (text === 'כן' || text === 'yes' || text === 'y') {
-    return { runStatus: RunStatus.done, resultStatus: ResultStatus.success };
-  }
-  if (text === 'לא' || text === 'no' || text === 'n') {
-    return { runStatus: RunStatus.done, resultStatus: ResultStatus.failed };
-  }
-  return { runStatus: RunStatus.need_to_run, resultStatus: null };
-}
+import { COLUMN_MAP, findColumnIndex, parseExecuted } from '../lib/importParse';
 
 export async function importExcelFile(buffer: Buffer): Promise<{ features: number; testCases: number }> {
   const workbook = new ExcelJS.Workbook();
@@ -64,6 +35,7 @@ export async function importExcelFile(buffer: Buffer): Promise<{ features: numbe
   let featureSort = (await prisma.feature.aggregate({ _max: { sortOrder: true } }))._max.sortOrder ?? 0;
 
   const latestVersion = await prisma.appVersion.findFirst({
+    where: { finishedAt: null },
     orderBy: { createdAt: 'desc' },
   });
 
