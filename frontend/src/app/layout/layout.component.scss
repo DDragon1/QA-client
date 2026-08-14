@@ -92,8 +92,12 @@ a.active mat-icon {
   padding: 16px;
   border-top: 1px solid var(--border-soft);
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
+.identity-btn,
 .theme-toggle {
   width: 100%;
   justify-content: flex-start;
@@ -103,6 +107,14 @@ a.active mat-icon {
   color: var(--text-muted) !important;
 }
 
+.identity-btn span,
+.theme-toggle span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.identity-btn mat-icon,
 .theme-toggle mat-icon {
   margin-inline-end: 4px;
 }

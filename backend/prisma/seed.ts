@@ -7,13 +7,22 @@ async function main() {
   await prisma.appVersion.deleteMany();
   await prisma.testCase.deleteMany();
   await prisma.feature.deleteMany();
+  await prisma.team.deleteMany();
+
+  const productTeam = await prisma.team.create({
+    data: { name: 'צוות מוצר', sortOrder: 1 },
+  });
+
+  const platformTeam = await prisma.team.create({
+    data: { name: 'צוות פלטפורמה', sortOrder: 2 },
+  });
 
   const searchFeature = await prisma.feature.create({
-    data: { name: 'חיפוש', sortOrder: 1 },
+    data: { name: 'חיפוש', sortOrder: 1, teamId: productTeam.id },
   });
 
   const rowsFeature = await prisma.feature.create({
-    data: { name: 'שורות', sortOrder: 2 },
+    data: { name: 'שורות', sortOrder: 2, teamId: platformTeam.id },
   });
 
   const testCases = await Promise.all([

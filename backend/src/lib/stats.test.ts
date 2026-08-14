@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ResultStatus, RunStatus } from '@prisma/client';
-import { computeVersionStats } from './stats';
+import { computeFinishWarnings, computeVersionStats } from './stats';
 
 describe('computeVersionStats', () => {
   it('returns zeros for an empty run list', () => {
@@ -44,5 +44,22 @@ describe('computeVersionStats', () => {
     expect(stats.failed).toBe(0);
     expect(stats.hasBug).toBe(0);
     expect(stats.total).toBe(2);
+  });
+});
+
+describe('computeFinishWarnings', () => {
+  it('returns no warnings for complete runs', () => {
+    expect(
+      computeFinishWarnings([{ runStatus: RunStatus.done, resultStatus: ResultStatus.success }])
+    ).toEqual([]);
+  });
+
+  it('flags unfinished, missing-result, and early-result runs', () => {
+    expect(
+      computeFinishWarnings([
+        { runStatus: RunStatus.need_to_run, resultStatus: ResultStatus.failed },
+        { runStatus: RunStatus.done, resultStatus: null },
+      ])
+    ).toEqual(['unfinished', 'doneWithoutResult', 'resultBeforeDone']);
   });
 });

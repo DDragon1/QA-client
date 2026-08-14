@@ -31,13 +31,26 @@ enum Environment {
   OPR
 }
 
+model Team {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  sortOrder Int       @default(0) @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at")
+  features  Feature[]
+
+  @@map("teams")
+}
+
 model Feature {
   id         String     @id @default(uuid())
   name       String
   sortOrder  Int        @default(0) @map("sort_order")
   createdAt  DateTime   @default(now()) @map("created_at")
+  teamId     String?    @map("team_id")
+  team       Team?      @relation(fields: [teamId], references: [id], onDelete: SetNull)
   testCases  TestCase[]
 
+  @@index([teamId])
   @@map("features")
 }
 
@@ -54,6 +67,8 @@ model TestCase {
   feature         Feature           @relation(fields: [featureId], references: [id], onDelete: Cascade)
   versionTestRuns VersionTestRun[]
 
+  @@index([featureId])
+  @@index([isActive])
   @@map("test_cases")
 }
 
@@ -66,6 +81,8 @@ model AppVersion {
   finishedAt      DateTime?         @map("finished_at")
   versionTestRuns VersionTestRun[]
 
+  @@index([finishedAt])
+  @@index([environment])
   @@map("app_versions")
 }
 
@@ -76,9 +93,11 @@ model VersionTestRun {
   runStatus                RunStatus     @default(need_to_run) @map("run_status")
   resultStatus             ResultStatus? @map("result_status")
   notes                    String?       @db.Text
+  lastUpdatedBy            String?       @map("last_updated_by")
   rowVersion               Int           @default(1) @map("row_version")
   updatedAt                DateTime      @updatedAt @map("updated_at")
   snapshotFeatureName      String?       @map("snapshot_feature_name")
+  snapshotTeamName         String?       @map("snapshot_team_name")
   snapshotScenario         String?       @map("snapshot_scenario")
   snapshotSteps            String?       @db.Text @map("snapshot_steps")
   snapshotExpectedResult   String?       @db.Text @map("snapshot_expected_result")
@@ -87,5 +106,7 @@ model VersionTestRun {
   testCase                 TestCase      @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
 
   @@unique([versionId, testCaseId])
+  @@index([testCaseId])
+  @@index([lastUpdatedBy])
   @@map("version_test_runs")
 }

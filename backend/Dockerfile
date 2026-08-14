@@ -24,11 +24,14 @@ RUN npx prisma generate
 
 COPY tsconfig.json vitest.config.mts ./
 COPY src ./src
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN npm test
 RUN npm run build
 
 RUN mkdir -p /tmp \
+    && sed -i 's/\r$//' /app/docker-entrypoint.sh \
+    && chmod +x /app/docker-entrypoint.sh \
     && chgrp -R 0 /app /tmp \
     && chmod -R g+rwX /app /tmp
 
@@ -37,4 +40,4 @@ ENV PORT=3000 \
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma db push && node dist/index.js"]
+CMD ["./docker-entrypoint.sh"]

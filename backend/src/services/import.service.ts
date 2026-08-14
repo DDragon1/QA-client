@@ -1,9 +1,13 @@
 import ExcelJS from 'exceljs';
-import { RunStatus } from '@prisma/client';
+import { Prisma, RunStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { COLUMN_MAP, findColumnIndex, parseExecuted } from '../lib/importParse';
+import { attachTestCaseToOpenVersions } from '../lib/openVersions';
 
-export async function importExcelFile(buffer: Buffer): Promise<{ features: number; testCases: number }> {
+export async function importExcelFile(
+  buffer: Buffer,
+  actorName?: string
+): Promise<{ features: number; testCases: number }> {
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(buffer as unknown as ExcelJS.Buffer);
 
@@ -19,6 +23,7 @@ export async function importExcelFile(buffer: Buffer): Promise<{ features: numbe
   });
 
   const colFeature = findColumnIndex(headers, COLUMN_MAP.feature);
+  const colTeam = findColumnIndex(headers, COLUMN_MAP.team);
   const colScenario = findColumnIndex(headers, COLUMN_MAP.scenario);
   const colSteps = findColumnIndex(headers, COLUMN_MAP.steps);
   const colExpected = findColumnIndex(headers, COLUMN_MAP.expected);
@@ -29,24 +34,51 @@ export async function importExcelFile(buffer: Buffer): Promise<{ features: numbe
     throw new Error('חסרות עמודות חובה: תרחיש, שלבים לביצוע, תוצר צפוי');
   }
 
+  return prisma.$transaction(
+    async (tx) => importRows(tx, sheet, {
+      colFeature,
+      colTeam,
+      colScenario,
+      colSteps,
+      colExpected,
+      colExecuted,
+      colNotes,
+      actorName,
+    }),
+    { timeout: 120_000, maxWait: 10_000 }
+  );
+}
+
+async function importRows(
+  tx: Prisma.TransactionClient,
+  sheet: ExcelJS.Worksheet,
+  cols: {
+    colFeature: number;
+    colTeam: number;
+    colScenario: number;
+    colSteps: number;
+    colExpected: number;
+    colExecuted: number;
+    colNotes: number;
+    actorName?: string;
+  }
+): Promise<{ features: number; testCases: number }> {
   let currentFeatureName = '';
+  let currentTeamName: string | null = null;
   let featureCount = 0;
   let testCaseCount = 0;
-  let featureSort = (await prisma.feature.aggregate({ _max: { sortOrder: true } }))._max.sortOrder ?? 0;
-
-  const latestVersion = await prisma.appVersion.findFirst({
-    where: { finishedAt: null },
-    orderBy: { createdAt: 'desc' },
-  });
+  let featureSort = (await tx.feature.aggregate({ _max: { sortOrder: true } }))._max.sortOrder ?? 0;
+  let teamSort = (await tx.team.aggregate({ _max: { sortOrder: true } }))._max.sortOrder ?? 0;
 
   for (let rowNum = 2; rowNum <= sheet.rowCount; rowNum++) {
     const row = sheet.getRow(rowNum);
     const getCell = (col: number) => (col >= 0 ? row.getCell(col + 1).value : null);
 
-    const featureCell = colFeature >= 0 ? getCell(colFeature) : null;
-    const scenario = (getCell(colScenario) ?? '').toString().trim();
-    const steps = (getCell(colSteps) ?? '').toString().trim();
-    const expected = (getCell(colExpected) ?? '').toString().trim();
+    const featureCell = cols.colFeature >= 0 ? getCell(cols.colFeature) : null;
+    const teamCell = cols.colTeam >= 0 ? getCell(cols.colTeam) : null;
+    const scenario = (getCell(cols.colScenario) ?? '').toString().trim();
+    const steps = (getCell(cols.colSteps) ?? '').toString().trim();
+    const expected = (getCell(cols.colExpected) ?? '').toString().trim();
 
     if (!scenario && !steps && !expected) continue;
 
@@ -55,28 +87,56 @@ export async function importExcelFile(buffer: Buffer): Promise<{ features: numbe
       if (name) currentFeatureName = name;
     }
 
+    if (teamCell) {
+      const name = teamCell.toString().trim();
+      currentTeamName = name || null;
+    }
+
     if (!currentFeatureName) {
       currentFeatureName = 'כללי';
     }
 
     if (!scenario || !steps || !expected) continue;
 
-    let feature = await prisma.feature.findFirst({
+    let teamId: string | null = null;
+    if (currentTeamName) {
+      let team = await tx.team.findUnique({
+        where: { name: currentTeamName },
+      });
+      if (!team) {
+        teamSort++;
+        team = await tx.team.create({
+          data: { name: currentTeamName, sortOrder: teamSort },
+        });
+      }
+      teamId = team.id;
+    }
+
+    let feature = await tx.feature.findFirst({
       where: { name: currentFeatureName },
     });
 
     if (!feature) {
       featureSort++;
-      feature = await prisma.feature.create({
-        data: { name: currentFeatureName, sortOrder: featureSort },
+      feature = await tx.feature.create({
+        data: { name: currentFeatureName, sortOrder: featureSort, teamId },
       });
       featureCount++;
+    } else if (teamId && feature.teamId !== teamId) {
+      feature = await tx.feature.update({
+        where: { id: feature.id },
+        data: { teamId },
+      });
     }
 
-    const executed = colExecuted >= 0 ? parseExecuted(getCell(colExecuted)) : { runStatus: RunStatus.need_to_run, resultStatus: null };
-    const notes = colNotes >= 0 ? (getCell(colNotes) ?? '').toString().trim() || null : null;
+    const executed =
+      cols.colExecuted >= 0
+        ? parseExecuted(getCell(cols.colExecuted))
+        : { runStatus: RunStatus.need_to_run, resultStatus: null, explicit: false };
+    const notes =
+      cols.colNotes >= 0 ? (getCell(cols.colNotes) ?? '').toString().trim() || null : null;
 
-    let testCase = await prisma.testCase.findFirst({
+    let testCase = await tx.testCase.findFirst({
       where: {
         featureId: feature.id,
         scenario,
@@ -86,12 +146,12 @@ export async function importExcelFile(buffer: Buffer): Promise<{ features: numbe
     });
 
     if (!testCase) {
-      const maxSort = await prisma.testCase.aggregate({
+      const maxSort = await tx.testCase.aggregate({
         where: { featureId: feature.id },
         _max: { sortOrder: true },
       });
 
-      testCase = await prisma.testCase.create({
+      testCase = await tx.testCase.create({
         data: {
           featureId: feature.id,
           scenario,
@@ -103,24 +163,17 @@ export async function importExcelFile(buffer: Buffer): Promise<{ features: numbe
       testCaseCount++;
     }
 
-    if (latestVersion) {
-      await prisma.versionTestRun.upsert({
-        where: {
-          versionId_testCaseId: {
-            versionId: latestVersion.id,
-            testCaseId: testCase.id,
-          },
-        },
-        create: {
-          versionId: latestVersion.id,
-          testCaseId: testCase.id,
-          runStatus: executed.runStatus,
-          resultStatus: executed.resultStatus,
-          notes,
-        },
-        update: {},
-      });
-    }
+    await attachTestCaseToOpenVersions(
+      tx,
+      testCase.id,
+      {
+        runStatus: executed.explicit ? executed.runStatus : RunStatus.need_to_run,
+        resultStatus: executed.explicit ? executed.resultStatus : null,
+        notes,
+        lastUpdatedBy: cols.actorName ?? null,
+      },
+      executed.explicit || notes != null
+    );
   }
 
   return { features: featureCount, testCases: testCaseCount };

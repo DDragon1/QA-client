@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, map, tap } from 'rxjs';
 import {
   AppVersion,
   Feature,
   ImportResult,
+  Team,
   TestCase,
   VersionTestRun,
 } from '../models';
@@ -21,12 +22,33 @@ export class ApiService {
     return this.config.apiUrl;
   }
 
-  getFeatures(): Observable<Feature[]> {
-    return this.http.get<Feature[]>(`${this.baseUrl}/features`);
+  getActors(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.baseUrl}/actors`);
   }
 
-  createFeature(name: string): Observable<Feature> {
-    return this.http.post<Feature>(`${this.baseUrl}/features`, { name });
+  getTeams(): Observable<Team[]> {
+    return this.http.get<Team[]>(`${this.baseUrl}/teams`);
+  }
+
+  createTeam(name: string): Observable<Team> {
+    return this.http.post<Team>(`${this.baseUrl}/teams`, { name });
+  }
+
+  updateTeam(id: string, data: { name?: string; sortOrder?: number }): Observable<Team> {
+    return this.http.patch<Team>(`${this.baseUrl}/teams/${id}`, data);
+  }
+
+  deleteTeam(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/teams/${id}`);
+  }
+
+  getFeatures(includeInactive = false): Observable<Feature[]> {
+    const params = includeInactive ? '?includeInactive=true' : '';
+    return this.http.get<Feature[]>(`${this.baseUrl}/features${params}`);
+  }
+
+  createFeature(name: string, teamId?: string | null): Observable<Feature> {
+    return this.http.post<Feature>(`${this.baseUrl}/features`, { name, teamId: teamId ?? null });
   }
 
   updateFeature(id: string, data: Partial<Feature>): Observable<Feature> {
@@ -102,6 +124,25 @@ export class ApiService {
     const formData = new FormData();
     formData.append('file', file);
     return this.http.post<ImportResult>(`${this.baseUrl}/import/excel`, formData);
+  }
+
+  downloadReport(url: string, filename: string): Observable<void> {
+    return this.http.get(url, { responseType: 'blob', observe: 'response' }).pipe(
+      tap((response) => {
+        const blob = response.body;
+        if (!blob) throw new Error('empty');
+        if (blob.type.includes('json')) {
+          throw new HttpErrorResponse({ status: 400, statusText: 'report-error' });
+        }
+        const link = document.createElement('a');
+        const objectUrl = URL.createObjectURL(blob);
+        link.href = objectUrl;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(objectUrl);
+      }),
+      map(() => undefined)
+    );
   }
 
   getReportExcelUrl(versionId: string): string {

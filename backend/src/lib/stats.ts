@@ -49,3 +49,21 @@ export function computeVersionStats(runs: Array<{ runStatus: RunStatus; resultSt
 
   return stats;
 }
+
+export type FinishWarning = 'unfinished' | 'doneWithoutResult' | 'resultBeforeDone';
+
+export function computeFinishWarnings(
+  runs: Array<{ runStatus: RunStatus; resultStatus: ResultStatus | null }>
+): FinishWarning[] {
+  const warnings: FinishWarning[] = [];
+  if (runs.some((run) => run.runStatus === RunStatus.need_to_run)) {
+    warnings.push('unfinished');
+  }
+  if (runs.some((run) => run.runStatus === RunStatus.done && !run.resultStatus)) {
+    warnings.push('doneWithoutResult');
+  }
+  if (runs.some((run) => run.runStatus === RunStatus.need_to_run && run.resultStatus)) {
+    warnings.push('resultBeforeDone');
+  }
+  return warnings;
+}

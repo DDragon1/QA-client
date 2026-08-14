@@ -2,11 +2,18 @@ import { RunStatus, ResultStatus } from '@prisma/client';
 
 export const COLUMN_MAP = {
   feature: ['תכולה'],
+  team: ['צוות'],
   scenario: ['תרחיש'],
   steps: ['שלבים לביצוע'],
   expected: ['תוצר צפוי'],
   executed: ['האם בוצע'],
   notes: ['הערות'],
+};
+
+export type ParsedExecution = {
+  runStatus: RunStatus;
+  resultStatus: ResultStatus | null;
+  explicit: boolean;
 };
 
 export function findColumnIndex(headers: string[], keys: string[]): number {
@@ -19,13 +26,22 @@ export function findColumnIndex(headers: string[], keys: string[]): number {
   return -1;
 }
 
-export function parseExecuted(value: unknown): { runStatus: RunStatus; resultStatus: ResultStatus | null } {
+export function parseExecuted(value: unknown): ParsedExecution {
   const text = (value ?? '').toString().trim().toLowerCase();
-  if (text === 'כן' || text === 'yes' || text === 'y') {
-    return { runStatus: RunStatus.done, resultStatus: ResultStatus.success };
+  if (!text) {
+    return { runStatus: RunStatus.need_to_run, resultStatus: null, explicit: false };
   }
-  if (text === 'לא' || text === 'no' || text === 'n') {
-    return { runStatus: RunStatus.done, resultStatus: ResultStatus.failed };
+  if (['כן', 'yes', 'y', 'הצליח', 'success'].includes(text)) {
+    return { runStatus: RunStatus.done, resultStatus: ResultStatus.success, explicit: true };
   }
-  return { runStatus: RunStatus.need_to_run, resultStatus: null };
+  if (['לא', 'no', 'n', 'נכשל', 'failed'].includes(text)) {
+    return { runStatus: RunStatus.done, resultStatus: ResultStatus.failed, explicit: true };
+  }
+  if (['באג', 'bug', 'has_bug', 'יש באג'].includes(text)) {
+    return { runStatus: RunStatus.done, resultStatus: ResultStatus.has_bug, explicit: true };
+  }
+  if (['rerun', 'need_to_rerun', 'להריץ מחדש', 'צריך להריץ מחדש'].includes(text)) {
+    return { runStatus: RunStatus.need_to_rerun, resultStatus: null, explicit: true };
+  }
+  return { runStatus: RunStatus.need_to_run, resultStatus: null, explicit: false };
 }

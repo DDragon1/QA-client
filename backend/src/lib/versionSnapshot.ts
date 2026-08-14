@@ -1,8 +1,10 @@
-import { AppVersion, Feature, TestCase, TestType, VersionTestRun } from '@prisma/client';
+import { AppVersion, Feature, Team, TestCase, TestType, VersionTestRun } from '@prisma/client';
 import { VersionStats } from './stats';
 
+export type FeatureWithTeam = Feature & { team: Team | null };
+
 export type RunWithTestCase = VersionTestRun & {
-  testCase: TestCase & { feature: Feature };
+  testCase: TestCase & { feature: FeatureWithTeam };
 };
 
 /** Prefer frozen snapshot fields when a version has been finished. */
@@ -28,6 +30,14 @@ export function applyRunSnapshot(run: RunWithTestCase): RunWithTestCase {
       feature: {
         ...run.testCase.feature,
         name: run.snapshotFeatureName,
+        team: run.snapshotTeamName
+          ? {
+              id: run.testCase.feature.team?.id ?? 'snapshot-team',
+              name: run.snapshotTeamName,
+              sortOrder: run.testCase.feature.team?.sortOrder ?? 0,
+              createdAt: run.testCase.feature.team?.createdAt ?? run.updatedAt,
+            }
+          : null,
       },
     },
   };
@@ -54,15 +64,17 @@ export function toVersionDto(
 
 export type SnapshotFields = {
   snapshotFeatureName: string;
+  snapshotTeamName: string | null;
   snapshotScenario: string;
   snapshotSteps: string;
   snapshotExpectedResult: string;
   snapshotType: TestType;
 };
 
-export function snapshotFromTestCase(testCase: TestCase & { feature: Feature }): SnapshotFields {
+export function snapshotFromTestCase(testCase: TestCase & { feature: FeatureWithTeam }): SnapshotFields {
   return {
     snapshotFeatureName: testCase.feature.name,
+    snapshotTeamName: testCase.feature.team?.name ?? null,
     snapshotScenario: testCase.scenario,
     snapshotSteps: testCase.steps,
     snapshotExpectedResult: testCase.expectedResult,

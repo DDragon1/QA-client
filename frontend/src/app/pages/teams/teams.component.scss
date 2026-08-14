@@ -1,0 +1,45 @@
+.page-header button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.team-item {
+  height: 100%;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.team-item:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md) !important;
+}
+
+.team-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.team-top h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.feature-count {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.team-actions {
+  display: flex;
+  flex-shrink: 0;
+}

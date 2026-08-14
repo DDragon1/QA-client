@@ -14,6 +14,8 @@ Hebrew RTL web app for managing manual and automatic QA test runs across app ver
 - Create app versions that snapshot all active tests
 - Track run status: צריך להריץ / בוצע / צריך להריץ מחדש
 - Track result status: הצליח / נכשל / יש באג
+- Assign a responsible team to each feature
+- Declare a display name (no login) so updates show who changed a run
 - Parallel QA updates with optimistic locking (409 on conflict)
 - Excel import from existing QA spreadsheets
 - Excel and PDF report export per version
@@ -52,7 +54,7 @@ cd backend
 cp .env.example .env   # if .env doesn't exist
 # If using Compose Postgres, set DATABASE_URL host port to 5433
 npm install
-npx prisma db push
+npx prisma migrate deploy
 npm run db:seed
 npm run dev
 ```
@@ -105,14 +107,20 @@ PDF generation on a cluster may need a writable `/dev/shm` (emptyDir `Memory`) b
 | Method | Route | Description |
 |--------|-------|-------------|
 | GET | `/api/health` | Liveness |
-| GET/POST | `/api/features` | Feature groups |
+| GET | `/api/actors` | Display names that have updated runs |
+| GET/POST/PATCH/DELETE | `/api/teams` | Teams responsible for features |
+| GET/POST/PATCH/DELETE | `/api/features` | Feature groups |
 | GET/POST/PATCH/DELETE | `/api/test-cases` | Test cases |
 | GET/POST | `/api/versions` | App versions |
+| GET | `/api/versions/:id` | Single version with stats |
+| POST | `/api/versions/:id/finish` | Finish and snapshot a version |
 | GET | `/api/versions/:id/runs` | Test runs for a version |
 | PATCH | `/api/versions/:id/runs/:runId` | Update run status (with `rowVersion`) |
 | GET | `/api/versions/:id/report.xlsx` | Excel report |
 | GET | `/api/versions/:id/report.pdf` | PDF report |
 | POST | `/api/import/excel` | Import Excel file |
+
+Write requests (POST/PATCH/DELETE) require an `X-Actor-Name` header. The UI asks each person to declare a display name and sends it automatically. This is identification on a trusted network, not authentication.
 
 ## Excel Import Format
 
@@ -121,10 +129,11 @@ Columns (Hebrew headers):
 | Column | Description |
 |--------|-------------|
 | תכולה | Feature name (can span multiple rows) |
+| צוות | Optional team name; created if missing and assigned to the feature |
 | תרחיש | Scenario |
 | שלבים לביצוע | Steps |
 | תוצר צפוי | Expected result |
-| האם בוצע | כן = done/success, empty = need to run |
+| האם בוצע | כן / הצליח = done+success, לא / נכשל = done+failed, באג = has_bug, להריץ מחדש = need_to_rerun, empty = need to run |
 | הערות | Notes |
 
 ## Project Structure

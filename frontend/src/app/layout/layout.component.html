@@ -26,6 +26,16 @@
     </mat-nav-list>
 
     <div class="sidenav-footer">
+      <button mat-stroked-button class="identity-btn" (click)="openIdentity(false)">
+        <mat-icon>badge</mat-icon>
+        <span>
+          @if (identity.name()) {
+            {{ labels.identity.youAre }} {{ identity.name() }}
+          } @else {
+            {{ labels.identity.change }}
+          }
+        </span>
+      </button>
       <button
         mat-stroked-button
         class="theme-toggle"

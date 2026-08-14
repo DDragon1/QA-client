@@ -11,8 +11,14 @@
   gap: 6px;
 }
 
-.import-btn {
-  cursor: pointer;
+.import-btn.disabled {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.search-field {
+  min-width: 260px;
+  max-width: 420px;
 }
 
 .filters {
@@ -36,8 +42,38 @@
   width: 100%;
 }
 
+.feature-cell {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .feature-name {
   font-weight: 600;
+}
+
+.feature-edit {
+  opacity: 0.55;
+}
+
+.team-chip,
+.muted-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.team-chip {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.muted-chip {
+  background: var(--surface-muted);
+  color: var(--text-subtle);
 }
 
 .text-cell {

@@ -1,0 +1,62 @@
+<div class="page-header">
+  <div>
+    <h1>{{ labels.teams.title }}</h1>
+    <p class="page-subtitle">{{ labels.teams.subtitle }}</p>
+  </div>
+  <button mat-raised-button color="primary" (click)="addTeam()">
+    <mat-icon>group_add</mat-icon>
+    {{ labels.teams.add }}
+  </button>
+</div>
+
+@if (loading) {
+  <div class="center-state">
+    <mat-spinner diameter="40" />
+    <p>{{ labels.common.loading }}</p>
+  </div>
+} @else if (!teams.length) {
+  <mat-card>
+    <mat-card-content>
+      <div class="empty-state">
+        <div class="empty-icon">
+          <mat-icon>groups</mat-icon>
+        </div>
+        <p class="empty-title">{{ labels.common.noData }}</p>
+        <p>{{ labels.teams.empty }}</p>
+        <button mat-raised-button color="primary" (click)="addTeam()">
+          {{ labels.teams.add }}
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+} @else {
+  <div class="teams-grid">
+    @for (team of teams; track team.id) {
+      <mat-card class="team-item">
+        <mat-card-content>
+          <div class="team-top">
+            <div>
+              <h2>{{ team.name }}</h2>
+              <p class="feature-count">
+                {{ labels.teams.featureCount }}: {{ team.featureCount ?? 0 }}
+              </p>
+            </div>
+            <div class="team-actions">
+              <button mat-icon-button (click)="editTeam(team)" [attr.aria-label]="labels.common.edit">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                color="warn"
+                (click)="deleteTeam(team)"
+                [attr.aria-label]="labels.common.delete"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+}

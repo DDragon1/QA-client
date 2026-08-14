@@ -3,11 +3,21 @@ export type RunStatus = 'need_to_run' | 'done' | 'need_to_rerun';
 export type ResultStatus = 'success' | 'failed' | 'has_bug';
 export type Environment = 'INT' | 'PRP' | 'DRL' | 'OPR';
 
+export interface Team {
+  id: string;
+  name: string;
+  sortOrder: number;
+  createdAt: string;
+  featureCount?: number;
+}
+
 export interface Feature {
   id: string;
   name: string;
   sortOrder: number;
   createdAt: string;
+  teamId: string | null;
+  team?: Team | null;
   testCases?: TestCase[];
 }
 
@@ -51,6 +61,7 @@ export interface VersionTestRun {
   runStatus: RunStatus;
   resultStatus: ResultStatus | null;
   notes: string | null;
+  lastUpdatedBy: string | null;
   rowVersion: number;
   updatedAt: string;
   testCase: TestCase & { feature: Feature };

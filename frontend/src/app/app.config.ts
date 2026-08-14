@@ -5,18 +5,19 @@ import {
   provideZoneChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { HttpClient, provideHttpClient } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { catchError, firstValueFrom, of, tap } from 'rxjs';
 
 import { routes } from './app.routes';
 import { RuntimeConfigService } from './core/services/runtime-config.service';
+import { actorInterceptor } from './core/services/actor.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([actorInterceptor])),
     provideAnimationsAsync(),
     provideAppInitializer(() => {
       const http = inject(HttpClient);

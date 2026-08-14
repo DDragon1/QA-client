@@ -33,6 +33,8 @@ export class ReportsComponent implements OnInit {
   versions: AppVersion[] = [];
   selectedVersionId = '';
 
+  downloading: 'excel' | 'pdf' | null = null;
+
   constructor(
     private api: ApiService,
     private snackBar: MatSnackBar
@@ -53,12 +55,32 @@ export class ReportsComponent implements OnInit {
   }
 
   downloadExcel(): void {
-    if (!this.selectedVersionId) return;
-    window.open(this.api.getReportExcelUrl(this.selectedVersionId), '_blank');
+    if (!this.selectedVersionId || this.downloading) return;
+    const version = this.versions.find((item) => item.id === this.selectedVersionId);
+    this.downloading = 'excel';
+    this.api
+      .downloadReport(this.api.getReportExcelUrl(this.selectedVersionId), `qa-report-${version?.name ?? 'version'}.xlsx`)
+      .subscribe({
+        next: () => (this.downloading = null),
+        error: () => {
+          this.downloading = null;
+          this.snackBar.open(LABELS.common.error, '', { duration: 4000 });
+        },
+      });
   }
 
   downloadPdf(): void {
-    if (!this.selectedVersionId) return;
-    window.open(this.api.getReportPdfUrl(this.selectedVersionId), '_blank');
+    if (!this.selectedVersionId || this.downloading) return;
+    const version = this.versions.find((item) => item.id === this.selectedVersionId);
+    this.downloading = 'pdf';
+    this.api
+      .downloadReport(this.api.getReportPdfUrl(this.selectedVersionId), `qa-report-${version?.name ?? 'version'}.pdf`)
+      .subscribe({
+        next: () => (this.downloading = null),
+        error: () => {
+          this.downloading = null;
+          this.snackBar.open(LABELS.common.error, '', { duration: 4000 });
+        },
+      });
   }
 }

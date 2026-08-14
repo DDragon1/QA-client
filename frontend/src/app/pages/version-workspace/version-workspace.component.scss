@@ -98,6 +98,16 @@
   flex: 1;
 }
 
+.search-field {
+  min-width: 220px;
+}
+
+.updated-by {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .workspace-table {
   width: 100%;
 }
@@ -105,6 +115,27 @@
 .feature-name {
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.team-chip,
+.muted-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.team-chip {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.muted-chip {
+  background: var(--surface-muted);
+  color: var(--text-subtle);
 }
 
 .scenario-title {

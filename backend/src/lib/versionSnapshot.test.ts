@@ -16,9 +16,11 @@ function makeRun(overrides: Partial<RunWithTestCase> = {}): RunWithTestCase {
     runStatus: RunStatus.need_to_run,
     resultStatus: null,
     notes: null,
+    lastUpdatedBy: null,
     rowVersion: 1,
     updatedAt: new Date('2026-01-01'),
     snapshotFeatureName: null,
+    snapshotTeamName: null,
     snapshotScenario: null,
     snapshotSteps: null,
     snapshotExpectedResult: null,
@@ -38,6 +40,13 @@ function makeRun(overrides: Partial<RunWithTestCase> = {}): RunWithTestCase {
         name: 'live feature',
         sortOrder: 1,
         createdAt: new Date('2026-01-01'),
+        teamId: 'team-1',
+        team: {
+          id: 'team-1',
+          name: 'live team',
+          sortOrder: 1,
+          createdAt: new Date('2026-01-01'),
+        },
       },
     },
   };
@@ -51,6 +60,13 @@ function makeRun(overrides: Partial<RunWithTestCase> = {}): RunWithTestCase {
       feature: {
         ...base.testCase.feature,
         ...(overrides.testCase?.feature ?? {}),
+        team:
+          overrides.testCase?.feature && 'team' in overrides.testCase.feature
+            ? overrides.testCase.feature.team
+            : {
+                ...base.testCase.feature.team!,
+                ...(overrides.testCase?.feature?.team ?? {}),
+              },
       },
     },
   };
@@ -70,6 +86,7 @@ describe('applyRunSnapshot', () => {
   it('overlays frozen snapshot fields when version was finished', () => {
     const run = makeRun({
       snapshotFeatureName: 'frozen feature',
+      snapshotTeamName: 'frozen team',
       snapshotScenario: 'frozen scenario',
       snapshotSteps: 'frozen steps',
       snapshotExpectedResult: 'frozen expected',
@@ -83,6 +100,7 @@ describe('applyRunSnapshot', () => {
     expect(result.testCase.expectedResult).toBe('frozen expected');
     expect(result.testCase.type).toBe(TestType.automatic);
     expect(result.testCase.feature.name).toBe('frozen feature');
+    expect(result.testCase.feature.team?.name).toBe('frozen team');
     expect(result.testCase.id).toBe('tc-1');
   });
 });
@@ -93,6 +111,7 @@ describe('mapRunsWithSnapshots', () => {
     const frozen = makeRun({
       id: 'frozen',
       snapshotFeatureName: 'frozen feature',
+      snapshotTeamName: 'frozen team',
       snapshotScenario: 'frozen scenario',
       snapshotSteps: 'frozen steps',
       snapshotExpectedResult: 'frozen expected',
@@ -104,6 +123,7 @@ describe('mapRunsWithSnapshots', () => {
     expect(mapped[0]).toBe(live);
     expect(mapped[1].testCase.scenario).toBe('frozen scenario');
     expect(mapped[1].testCase.feature.name).toBe('frozen feature');
+    expect(mapped[1].testCase.feature.team?.name).toBe('frozen team');
   });
 });
 
@@ -112,11 +132,27 @@ describe('snapshotFromTestCase', () => {
     const run = makeRun();
     expect(snapshotFromTestCase(run.testCase)).toEqual({
       snapshotFeatureName: 'live feature',
+      snapshotTeamName: 'live team',
       snapshotScenario: 'live scenario',
       snapshotSteps: 'live steps',
       snapshotExpectedResult: 'live expected',
       snapshotType: TestType.manual,
     });
+  });
+
+  it('stores a null team snapshot when the feature has no team', () => {
+    const run = makeRun({
+      testCase: {
+        ...makeRun().testCase,
+        feature: {
+          ...makeRun().testCase.feature,
+          teamId: null,
+          team: null,
+        },
+      },
+    });
+
+    expect(snapshotFromTestCase(run.testCase).snapshotTeamName).toBeNull();
   });
 });
 

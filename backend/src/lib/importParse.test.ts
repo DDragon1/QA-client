@@ -12,6 +12,10 @@ describe('findColumnIndex', () => {
     expect(findColumnIndex(headers, COLUMN_MAP.expected)).toBe(3);
   });
 
+  it('finds an optional team column', () => {
+    expect(findColumnIndex(['תכולה', 'צוות', 'תרחיש'], COLUMN_MAP.team)).toBe(1);
+  });
+
   it('returns -1 when a required column is missing', () => {
     expect(findColumnIndex(['תכולה', 'הערות'], COLUMN_MAP.scenario)).toBe(-1);
   });
@@ -25,8 +29,11 @@ describe('parseExecuted', () => {
     ['לא', RunStatus.done, ResultStatus.failed],
     ['No', RunStatus.done, ResultStatus.failed],
     ['n', RunStatus.done, ResultStatus.failed],
-  ])('parses %s as done with the matching result', (value, runStatus, resultStatus) => {
-    expect(parseExecuted(value)).toEqual({ runStatus, resultStatus });
+    ['באג', RunStatus.done, ResultStatus.has_bug],
+    ['יש באג', RunStatus.done, ResultStatus.has_bug],
+    ['צריך להריץ מחדש', RunStatus.need_to_rerun, null],
+  ])('parses %s as an explicit execution state', (value, runStatus, resultStatus) => {
+    expect(parseExecuted(value)).toEqual({ runStatus, resultStatus, explicit: true });
   });
 
   it.each([null, undefined, '', '  ', 'pending', 'אולי'])(
@@ -35,6 +42,7 @@ describe('parseExecuted', () => {
       expect(parseExecuted(value)).toEqual({
         runStatus: RunStatus.need_to_run,
         resultStatus: null,
+        explicit: false,
       });
     }
   );

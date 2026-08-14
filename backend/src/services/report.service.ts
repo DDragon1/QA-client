@@ -14,12 +14,13 @@ type RunWithTestCase = {
   runStatus: RunStatus;
   resultStatus: ResultStatus | null;
   notes: string | null;
+  lastUpdatedBy?: string | null;
   testCase: {
     scenario: string;
     steps: string;
     expectedResult: string;
     type: TestType;
-    feature: { name: string };
+    feature: { name: string; team: { name: string } | null };
   };
 };
 
@@ -70,7 +71,10 @@ function buildReportHtml(version: AppVersion, runs: RunWithTestCase[]): string {
   for (const run of runs) {
     if (run.testCase.feature.name !== currentFeature) {
       currentFeature = run.testCase.feature.name;
-      sections.push(`<h2>${escapeHtml(`תכולה: ${currentFeature}`)}</h2>`);
+      const teamName = run.testCase.feature.team?.name;
+      sections.push(
+        `<h2>${escapeHtml(`תכולה: ${currentFeature}`)}${teamName ? escapeHtml(` · צוות: ${teamName}`) : ''}</h2>`
+      );
     }
 
     sections.push(`<article>
@@ -80,6 +84,7 @@ function buildReportHtml(version: AppVersion, runs: RunWithTestCase[]): string {
       <p>${escapeHtml(`תוצר צפוי: ${run.testCase.expectedResult}`)}</p>
       <p>${escapeHtml(`סטטוס הרצה: ${labelRunStatus(run.runStatus)}`)}</p>
       <p>${escapeHtml(`תוצאה: ${run.resultStatus ? labelResultStatus(run.resultStatus) : '-'}`)}</p>
+      ${run.lastUpdatedBy ? `<p>${escapeHtml(`עודכן ע״י: ${run.lastUpdatedBy}`)}</p>` : ''}
       ${run.notes ? `<p>${escapeHtml(`הערות: ${run.notes}`)}</p>` : ''}
     </article>`);
   }
@@ -150,6 +155,7 @@ export async function generateExcelReport(version: AppVersion, runs: RunWithTest
 
   sheet.columns = [
     { header: 'תכולה', key: 'feature', width: 20 },
+    { header: 'צוות', key: 'team', width: 18 },
     { header: 'תרחיש', key: 'scenario', width: 25 },
     { header: 'שלבים לביצוע', key: 'steps', width: 40 },
     { header: 'תוצר צפוי', key: 'expected', width: 30 },
@@ -157,6 +163,7 @@ export async function generateExcelReport(version: AppVersion, runs: RunWithTest
     { header: 'סטטוס הרצה', key: 'runStatus', width: 18 },
     { header: 'תוצאה', key: 'resultStatus', width: 15 },
     { header: 'הערות', key: 'notes', width: 30 },
+    { header: 'עודכן ע״י', key: 'updatedBy', width: 18 },
   ];
 
   sheet.getRow(1).font = { bold: true };
@@ -164,6 +171,7 @@ export async function generateExcelReport(version: AppVersion, runs: RunWithTest
   for (const run of runs) {
     sheet.addRow({
       feature: run.testCase.feature.name,
+      team: run.testCase.feature.team?.name ?? '',
       scenario: run.testCase.scenario,
       steps: run.testCase.steps,
       expected: run.testCase.expectedResult,
@@ -171,6 +179,7 @@ export async function generateExcelReport(version: AppVersion, runs: RunWithTest
       runStatus: labelRunStatus(run.runStatus),
       resultStatus: run.resultStatus ? labelResultStatus(run.resultStatus) : '',
       notes: run.notes ?? '',
+      updatedBy: run.lastUpdatedBy ?? '',
     });
   }
 
@@ -186,15 +195,18 @@ export async function generatePdfReport(
   const browser = await puppeteer.launch({
     executablePath: resolveChromePath(),
     headless: true,
+    timeout: 30_000,
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--font-render-hinting=none'],
   });
 
   try {
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'load' });
+    page.setDefaultTimeout(60_000);
+    await page.setContent(html, { waitUntil: 'load', timeout: 60_000 });
     const pdf = await page.pdf({
       format: 'A4',
       printBackground: true,
+      timeout: 60_000,
       margin: { top: '16mm', right: '14mm', bottom: '16mm', left: '14mm' },
     });
     return Buffer.from(pdf);

@@ -14,6 +14,8 @@ import { ApiService } from '../../core/services/api.service';
 import { AppVersion, Environment } from '../../core/models';
 import { ENVIRONMENT_OPTIONS, LABELS } from '../../core/i18n/he';
 import { VersionDialogComponent } from './version-dialog.component';
+import { confirmAction } from '../../shared/confirm';
+import { finishWarningMessages } from '../../core/utils/finish-warnings';
 
 @Component({
   selector: 'app-versions',
@@ -90,9 +92,19 @@ export class VersionsComponent implements OnInit {
     );
   }
 
-  finishVersion(version: AppVersion): void {
+  async finishVersion(version: AppVersion): Promise<void> {
     if (version.finishedAt || this.finishingId) return;
-    if (!confirm(LABELS.versions.finishConfirm)) return;
+    const warnings = finishWarningMessages(version);
+    const extra = warnings.length
+      ? `\n\n${warnings.join('\n')}\n${LABELS.versions.finishAnyway}`
+      : '';
+    const confirmed = await confirmAction(this.dialog, {
+      title: LABELS.versions.finish,
+      message: `${LABELS.versions.finishConfirm}${extra}`,
+      confirmLabel: LABELS.versions.finish,
+      warn: true,
+    });
+    if (!confirmed) return;
 
     this.finishingId = version.id;
     this.api.finishVersion(version.id).subscribe({
