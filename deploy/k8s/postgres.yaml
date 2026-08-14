@@ -1,0 +1,68 @@
+# Example only — not for production. Use a managed Postgres or an operator.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: qa-postgres
+type: Opaque
+stringData:
+  POSTGRES_DB: qa_app
+  POSTGRES_USER: qa
+  POSTGRES_PASSWORD: change-me
+  DATABASE_URL: postgresql://qa:change-me@qa-postgres:5432/qa_app?schema=public
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: qa-postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qa-postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qa-postgres
+  template:
+    metadata:
+      labels:
+        app: qa-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: qa-postgres
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "qa", "-d", "qa_app"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: qa-postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qa-postgres
+spec:
+  selector:
+    app: qa-postgres
+  ports:
+    - port: 5432
+      targetPort: 5432

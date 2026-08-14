@@ -21,21 +21,36 @@ Hebrew RTL web app for managing manual and automatic QA test runs across app ver
 ## Prerequisites
 
 - Node.js 20+
-- Docker (for PostgreSQL)
+- Docker (for PostgreSQL and/or the full stack)
 
 ## Quick Start
 
-### 1. Start PostgreSQL
+### Docker Compose (full stack)
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
-### 2. Backend
+- App: http://localhost:8080
+- API (direct): http://localhost:3001
+- Postgres (host): `localhost:5433`
+
+The frontend container writes `/config.json` from `API_URL` at startup, so you can point the browser at a different backend **without rebuilding the image**.
+
+### Local development
+
+**1. Start PostgreSQL**
+
+```bash
+docker compose up -d postgres
+```
+
+**2. Backend**
 
 ```bash
 cd backend
 cp .env.example .env   # if .env doesn't exist
+# If using Compose Postgres, set DATABASE_URL host port to 5433
 npm install
 npx prisma db push
 npm run db:seed
@@ -44,7 +59,7 @@ npm run dev
 
 Backend runs at http://localhost:3001
 
-### 3. Frontend
+**3. Frontend**
 
 ```bash
 cd frontend
@@ -52,12 +67,44 @@ npm install
 npm start
 ```
 
-Frontend runs at http://localhost:8080 (proxies `/api` to backend)
+Frontend runs at http://localhost:8080 and proxies `/api` to the backend. Default [`frontend/public/config.json`](frontend/public/config.json) uses `"apiUrl": "/api"`. To call a remote API from local `ng serve`, change that file (no rebuild of env-specific bundles).
+
+## Environment variables
+
+### Frontend container
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `API_URL` | `/api` | Backend URL the **browser** calls. Relative (`/api`) for same-origin / Ingress, or absolute (`https://qa-api.example.com/api`). |
+| `BACKEND_URL` | unset | Optional nginx reverse-proxy target (e.g. `http://backend:3000`). When unset, nginx serves the SPA only. |
+| `PORT` | `8080` | nginx listen port (unprivileged; required on OpenShift). |
+
+### Backend
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | required | PostgreSQL connection string. |
+| `PORT` | `3000` | Listen port. OpenShift typically sets `8080`. |
+| `HOST` | `0.0.0.0` | Bind address. |
+| `PUPPETEER_EXECUTABLE_PATH` | set in image | Chromium path for PDF reports. |
+
+The API allows all browser origins (`Access-Control-Allow-Origin: *`), so the SPA can call it from another host when `API_URL` is an absolute URL.
+
+Point the client at another backend without rebuilding:
+
+```bash
+docker compose run --rm -e API_URL=https://qa-api.example.com/api -e PORT=8080 -p 8080:8080 frontend
+```
+
+Or set `API_URL` on the frontend Deployment / ConfigMap. Sample Kubernetes/OpenShift YAML is in [`deploy/k8s/`](deploy/k8s/).
+
+PDF generation on a cluster may need a writable `/dev/shm` (emptyDir `Memory`) because Chromium is launched with `--no-sandbox`.
 
 ## API Endpoints
 
 | Method | Route | Description |
 |--------|-------|-------------|
+| GET | `/api/health` | Liveness |
 | GET/POST | `/api/features` | Feature groups |
 | GET/POST/PATCH/DELETE | `/api/test-cases` | Test cases |
 | GET/POST | `/api/versions` | App versions |
@@ -86,5 +133,6 @@ Columns (Hebrew headers):
 QA-client/
   backend/          Express API + Prisma
   frontend/         Angular RTL app
+  deploy/k8s/       Sample Kubernetes / OpenShift manifests
   docker-compose.yml
 ```

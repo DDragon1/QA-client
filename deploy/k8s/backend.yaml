@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qa-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qa-backend
+  template:
+    metadata:
+      labels:
+        app: qa-backend
+    spec:
+      containers:
+        - name: backend
+          image: qa-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: qa-postgres
+                  key: DATABASE_URL
+            - name: PUPPETEER_EXECUTABLE_PATH
+              value: /usr/bin/chromium
+          volumeMounts:
+            - name: dshm
+              mountPath: /dev/shm
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 20
+      volumes:
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qa-backend
+spec:
+  selector:
+    app: qa-backend
+  ports:
+    - port: 8080
+      targetPort: 8080

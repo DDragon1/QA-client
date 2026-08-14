@@ -73,34 +73,52 @@ export async function importExcelFile(buffer: Buffer): Promise<{ features: numbe
       featureCount++;
     }
 
-    const maxSort = await prisma.testCase.aggregate({
-      where: { featureId: feature.id },
-      _max: { sortOrder: true },
-    });
-
     const executed = colExecuted >= 0 ? parseExecuted(getCell(colExecuted)) : { runStatus: RunStatus.need_to_run, resultStatus: null };
     const notes = colNotes >= 0 ? (getCell(colNotes) ?? '').toString().trim() || null : null;
 
-    const testCase = await prisma.testCase.create({
-      data: {
+    let testCase = await prisma.testCase.findFirst({
+      where: {
         featureId: feature.id,
         scenario,
         steps,
         expectedResult: expected,
-        sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
       },
     });
-    testCaseCount++;
+
+    if (!testCase) {
+      const maxSort = await prisma.testCase.aggregate({
+        where: { featureId: feature.id },
+        _max: { sortOrder: true },
+      });
+
+      testCase = await prisma.testCase.create({
+        data: {
+          featureId: feature.id,
+          scenario,
+          steps,
+          expectedResult: expected,
+          sortOrder: (maxSort._max.sortOrder ?? 0) + 1,
+        },
+      });
+      testCaseCount++;
+    }
 
     if (latestVersion) {
-      await prisma.versionTestRun.create({
-        data: {
+      await prisma.versionTestRun.upsert({
+        where: {
+          versionId_testCaseId: {
+            versionId: latestVersion.id,
+            testCaseId: testCase.id,
+          },
+        },
+        create: {
           versionId: latestVersion.id,
           testCaseId: testCase.id,
           runStatus: executed.runStatus,
           resultStatus: executed.resultStatus,
           notes,
         },
+        update: {},
       });
     }
   }

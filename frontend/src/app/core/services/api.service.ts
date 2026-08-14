@@ -8,12 +8,18 @@ import {
   TestCase,
   VersionTestRun,
 } from '../models';
+import { RuntimeConfigService } from './runtime-config.service';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private readonly baseUrl = '/api';
+  constructor(
+    private http: HttpClient,
+    private config: RuntimeConfigService
+  ) {}
 
-  constructor(private http: HttpClient) {}
+  private get baseUrl(): string {
+    return this.config.apiUrl;
+  }
 
   getFeatures(): Observable<Feature[]> {
     return this.http.get<Feature[]>(`${this.baseUrl}/features`);

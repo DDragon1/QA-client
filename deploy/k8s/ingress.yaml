@@ -1,0 +1,36 @@
+# Pattern A — single host, path-based routing (this file is valid as-is).
+# Frontend ConfigMap: API_URL=/api
+# Do not set BACKEND_URL; Ingress sends /api to the backend.
+#
+# Pattern B — two hosts (backend already allows all CORS origins):
+#   Frontend ConfigMap: API_URL=https://qa-api.example.com/api
+#   Create two Ingress objects (qa.example.com → frontend, qa-api.example.com → backend).
+#
+# OpenShift Routes (instead of Ingress):
+#   PORT=8080 on both deployments.
+#   Frontend ConfigMap: API_URL=https://qa-api.apps.example.com/api
+#   oc create route edge qa-frontend --service=qa-frontend --port=8080 --hostname=qa.apps.example.com
+#   oc create route edge qa-backend --service=qa-backend --port=8080 --hostname=qa-api.apps.example.com
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qa-app
+spec:
+  rules:
+    - host: qa.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: qa-backend
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: qa-frontend
+                port:
+                  number: 8080

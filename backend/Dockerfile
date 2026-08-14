@@ -28,8 +28,12 @@ COPY src ./src
 RUN npm test
 RUN npm run build
 
-ENV DATABASE_URL=postgresql://qa:qa@postgres:5432/qa_app?schema=public
-ENV PORT=3000
+RUN mkdir -p /tmp \
+    && chgrp -R 0 /app /tmp \
+    && chmod -R g+rwX /app /tmp
+
+ENV PORT=3000 \
+    HOST=0.0.0.0
 
 EXPOSE 3000
 
